@@ -1,6 +1,7 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import sequelize from 'sequelize';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './commons/filters';
 import { setupSwagger } from './commons/utils';
@@ -22,7 +23,8 @@ async function bootstrap() {
   setupSwagger(app);
   app.enableCors();
   app.useGlobalFilters(new HttpExceptionFilter());
-
+  
+  
   await app.listen(PORT);
 
   if (configService.get('NODE_ENV') === 'development') {

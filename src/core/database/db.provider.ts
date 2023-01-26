@@ -27,7 +27,9 @@ export const databaseProviders = [
       const sequelize = new Sequelize(config);
       sequelize.addModels([Board]);
       console.log(sequelize);
-      // await sequelize.sync();
+      await sequelize.sync({
+        force: true,
+      });
       return sequelize;
     },
   },

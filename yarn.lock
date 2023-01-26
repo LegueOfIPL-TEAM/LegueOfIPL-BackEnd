@@ -700,7 +700,7 @@
 
 "@nestjs/config@^2.2.0":
   version "2.2.0"
-  resolved "https://registry.npmjs.org/@nestjs/config/-/config-2.2.0.tgz"
+  resolved "https://registry.yarnpkg.com/@nestjs/config/-/config-2.2.0.tgz#9f3da35f7c4a58724c0a0817d6f04b66e6703430"
   integrity sha512-78Eg6oMbCy3D/YvqeiGBTOWei1Jwi3f2pSIZcZ1QxY67kYsJzTRTkwRT8Iv30DbK0sGKc1mcloDLD5UXgZAZtg==
   dependencies:
     dotenv "16.0.1"

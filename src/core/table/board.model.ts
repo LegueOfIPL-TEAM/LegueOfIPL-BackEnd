@@ -9,13 +9,13 @@ import {
   
   @Table({ timestamps: true, paranoid: true })
   export class Board extends Model {
-    // @Column
-    // @PrimaryKey
-    // id: number;
+    @PrimaryKey
+    @Column
+    id: number;
   
-    // @Column
-    // author: string;
+    @Column
+    title: string;
   
-    // @Column(DataType.TEXT)
-    // context:string;
+    @Column(DataType.TEXT)
+    discription:string;
   }
