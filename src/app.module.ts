@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { validation } from './commons/utils';
 import { BoardModule } from './board/board.module';
 import { SequelizeModule } from '@nestjs/sequelize';

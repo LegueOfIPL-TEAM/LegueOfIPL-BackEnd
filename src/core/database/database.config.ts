@@ -1,5 +1,8 @@
 import { IDatabaseConfig } from "../interfaces/dbConfig.interface";
 
+
+// 현재 inject가 안 되는 상황 ( env = undefined ) 방법 찾아볼것..
+
 export const databaseConfig: IDatabaseConfig = {
   development: {
     username: process.env.DB_USER,

@@ -1,7 +1,6 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import sequelize from 'sequelize';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './commons/filters';
 import { setupSwagger } from './commons/utils';
@@ -11,7 +10,7 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const PORT = configService.get('SERVER_PORT');
-
+  
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
