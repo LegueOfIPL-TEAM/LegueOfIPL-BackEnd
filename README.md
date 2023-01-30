@@ -1,5 +1,5 @@
 # 🏆 IPL legue 서비스 소개
-서든어택 IPL 무소속 리그 (https://cafe.naver.com/safriendship)의 래더 시스템을 도입하기 위해서 시작하는 프로젝트입니다
+서든어택 IPL 무소속 리그 ( https://cafe.naver.com/safriendship )의 래더 시스템을 도입하기 위해서 시작하는 프로젝트입니다
 
 
 # 기획 의도
