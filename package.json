@@ -29,6 +29,7 @@
     "@nestjs/sequelize": "^9.0.0",
     "@nestjs/swagger": "^6.1.1",
     "@types/sequelize": "^4.28.14",
+    "chromedriver": "^109.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.13.2",
     "cross-env": "^7.0.3",
@@ -38,8 +39,10 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",
+    "selenium-webdriver": "^4.8.0",
     "sequelize": "^6.28.0",
-    "sequelize-typescript": "^2.1.5"
+    "sequelize-typescript": "^2.1.5",
+    "webdriver-manager": "^12.1.8"
   },
   "devDependencies": {
     "@nestjs/cli": "^9.0.0",

@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { validation } from './commons/utils';
 import { BoardModule } from './board/board.module';
-import { SequelizeModule } from '@nestjs/sequelize';
-import { Board } from './core/table/board.model';
 import { DatabaseModule } from './core/database/data.module';
+import { CrawlingModule } from './crawling/crawling.module';
 
 @Module({
   imports: [
@@ -18,6 +17,7 @@ import { DatabaseModule } from './core/database/data.module';
       isGlobal: true,
       validationSchema: validation,
     }),
+    CrawlingModule,
     DatabaseModule,
     BoardModule,
   ],
