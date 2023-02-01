@@ -7,8 +7,13 @@ export class CrawlingController {
         private crawlingService: CrawlingService
     ){}
 
+    // @Get()
+    // async test(){
+    //     return await this.crawlingService.clanMatchData()
+    // }
+
     @Get()
-    test(){
-        return this.crawlingService.connection()
+    async test(){
+        return await this.crawlingService.clanMatchData()
     }
 }
