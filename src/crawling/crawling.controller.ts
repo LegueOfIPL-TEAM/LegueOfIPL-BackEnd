@@ -12,8 +12,13 @@ export class CrawlingController {
     //     return await this.crawlingService.clanMatchData()
     // }
 
+    // @Get()
+    // async test(){
+    //     return await this.crawlingService.clanMatchData()
+    // }
+
     @Get()
-    async test(){
-        return await this.crawlingService.clanMatchData()
+    async test2(){
+        return await this.crawlingService.playWrightCrawling()
     }
 }
