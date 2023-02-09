@@ -5,3 +5,5 @@ export interface matchData {
     score: string;
     matchType: string;
 }
+
+

@@ -21,4 +21,9 @@ export class CrawlingController {
     async test2(){
         return await this.crawlingService.playWrightCrawling()
     }
+
+    @Get('/battleDetail')
+    async test3(){
+        return await this.crawlingService.testAPI()
+    }
 }
