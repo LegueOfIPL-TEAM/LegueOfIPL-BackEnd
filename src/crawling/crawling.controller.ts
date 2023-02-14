@@ -6,24 +6,13 @@ export class CrawlingController {
     constructor(
         private crawlingService: CrawlingService
     ){}
-
     // @Get()
-    // async test(){
-    //     return await this.crawlingService.clanMatchData()
+    // async test2(){
+    //     return await this.crawlingService.playWrightCrawling()
     // }
 
-    // @Get()
-    // async test(){
-    //     return await this.crawlingService.clanMatchData()
-    // }
-
-    @Get()
-    async test2(){
-        return await this.crawlingService.playWrightCrawling()
-    }
-
-    @Get('/battleDetail')
-    async test3(){
-        return await this.crawlingService.testAPI()
+    @Get('/test')
+    async test(){
+        return await this.crawlingService.test()
     }
 }
