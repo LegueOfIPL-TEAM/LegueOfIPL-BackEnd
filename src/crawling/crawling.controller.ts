@@ -1,18 +1,13 @@
 import { Controller, Get } from '@nestjs/common';
 import { CrawlingService } from './crawling.service';
 
-@Controller('crawling')
+@Controller('refactoring')
 export class CrawlingController {
     constructor(
         private crawlingService: CrawlingService
     ){}
-    // @Get()
-    // async test2(){
-    //     return await this.crawlingService.playWrightCrawling()
-    // }
-
-    @Get('/test')
+    @Get('/data')
     async test(){
-        return await this.crawlingService.test()
+        return await this.crawlingService.allOfDatasInSa()
     }
 }

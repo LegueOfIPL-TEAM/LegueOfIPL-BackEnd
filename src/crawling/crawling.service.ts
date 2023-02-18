@@ -5,24 +5,19 @@ import { response } from 'express';
 
 @Injectable()
 export class CrawlingService {
-  async test() {
-    const testApi = await this.getManyMatchList();
+  async allOfDatasInSa() {
+    const getMatchList = await this.getManyMatchList();
 
-    console.log('testAPI 통과')
-    const { battleLogUrls, matchListInfo, matchResusltUrls } = testApi
+    const { battleLogUrls, matchListInfo, matchResusltUrls } = getMatchList
 
     const matchDetails = await this.getMatchDetails(matchResusltUrls)
-    console.log('matchDetails 통과')
 
     const battleLogs = await this.getBattleLog(battleLogUrls)
 
-    console.log('battleLogs 통과')
     const refacBattleLog = this.refactoringBattleLogData(battleLogs)
 
-    console.log('refacBattlLog 통과')
     const allOfDataWithRefact = this.lastRefacDataOfSa({matchListInfo, battleLogs: refacBattleLog, matchDetails})
-    
-    console.log('allOfData 통과')
+  
     return allOfDataWithRefact;
   }
 
@@ -100,9 +95,12 @@ export class CrawlingService {
           headers: { 'Content-Type': 'application/json' },
         };
 
-        const requestSpecificUrl = await this.fetchWithDelay(url, request, 20000);
-        console.log('데이터는 받아왔어요')
+        const requestSpecificUrl = await fetch(url, request);
+        
+        if(requestSpecificUrl.status === 500) return []
+        
         const response = await requestSpecificUrl.json();
+        
 
         const { battleLog } = response;
 
@@ -130,16 +128,10 @@ export class CrawlingService {
             eventCategory,
             userNexonSn,
             weapon,
-            kill: 0,
-            death: 0,
-            assist: 0,
             loseTeamUserNick: targetUsernick,
             targetEventType,
             targetUserNexonSn,
             targetWeapon,
-            targetKill: 0,
-            targetDeath: 0,
-            targetAssist: 0,
           };
 
           return response;
@@ -157,15 +149,12 @@ export class CrawlingService {
     const url = 'https://barracks.sa.nexon.com/api/ClanHome/GetClanMatchList/';
 
     const clienIds = [
-      'sladltlek', 'BallantinesM', 'LOTUS', 'dregonlif', 'hweeparam', 'clanhanul','SkullClanz','you7501', 'wonju1', 'Cherish20',
-      'dlsdus1', 'eee07', 'uava01', 'tjrbdlf121122112','suddenmarin', 'DZID','wdasdw', 'FS0918', 'jth9341', 'asdoie',
-    ];
-
-    
-       
-
-    // 'aren11', 'onespringday', 'lpcrew', 'watwta', 'MiraGe', 'baxtercian', 'withyj0', 'monster1a2a3a', 'Arcturus', '940815',
-    //   'NumberMatch', 'pookoo', 'knonkoutkikiki', 'HardBotrio', 'roma', 'meein', 'sinzo123', 'noneplus', 'pandemic', 'dkssud13'
+      'sladltlek', 'BallantinesM', 'LOTUS', 'dregonlif', 'hweeparam', 'clanhanul','SkullClanz','you7501', 
+      'wonju1', 'Cherish20','dlsdus1', 'eee07', 'uava01','tjrbdlf121122112','suddenmarin', 'DZID','wdasdw', 'FS0918', 'jth9341', 
+      'asdoie','aren11', 'onespringday', 'lpcrew', 'watwta', 'baxtercian', 'withyj0', 'monster1a2a3a', 'Arcturus', '940815',
+      'aren11', 'onespringday', 'lpcrew', 'watwta', 'MiraGe', 'baxtercian', 'withyj0', 'monster1a2a3a', 'Arcturus', '940815',
+      'NumberMatch', 'pookoo', 'knonkoutkikiki', 'HardBotrio', 'roma', 'meein', 'sinzo123', 'noneplus', 'pandemic', 'dkssud13'
+    ];     
 
     const matchListInfo = [];
     const battleLogUrls = [];
@@ -183,53 +172,17 @@ export class CrawlingService {
         headers: { 'Content-Type': 'application/json' },
       };
 
-      const requestSpecificUrl = await this.fetchWithDelay(url, matchListRequest, 10000);
+      const requestSpecificUrl = await fetch(url, matchListRequest);
 
       const response = await requestSpecificUrl.json();
 
       const { result } = response;
 
       const clanInIPLgue = [
-        'NeGlecT-',
-        'Xperia',
-        '-Ballentine_s_M-',
-        'izmir-',
-        `'Signal'`,
-        'Asterisk',
-        'Entertainment、',
-        'decalcomanie:)',
-        'legend1st',
-        'Cherish*',
-        'ylevoL',
-        'deIuna',
-        'vuvuzela',
-        'Gloria',
-        'dokbul',
-        '레트로폭탄',
-        'sugarcandy',
-        '♡starry',
-        '머리부시기',
-        'Bailey:',
-        'setter',
-        'GUlNNESS',
-        'wage',
-        'fierceness',
-        'MiraGe',
-        'saintlux',
-        'bellobro',
-        'surrealclan',
-        '<raiser>',
-        'sweetie',
-        'hypeus',
-        'Relive',
-        'everything',
-        'recent.wct',
-        '〃veritas',
-        'Critisism',
-        'massacre;',
-        'none+',
-        'Mentalist:',
-        'Valentina',
+        'NeGlecT-','Xperia','-Ballentine_s_M-','izmir-',`'Signal'`,'Asterisk','Entertainment、','decalcomanie:)','legend1st',
+        'Cherish*','ylevoL','deIuna','vuvuzela','Gloria','dokbul','레트로폭탄','sugarcandy','♡starry','머리부시기',
+        'Bailey:','setter','GUlNNESS','wage','fierceness','MiraGe','saintlux','bellobro','surrealclan','<raiser>','sweetie',
+        'hypeus','Relive','everything','recent.wct','〃veritas','Critisism','massacre;','none+','Mentalist:','Valentina',
       ];
 
       result.forEach((item) => {
@@ -331,6 +284,8 @@ export class CrawlingService {
         blueUserList: battleLogs[index]['winnerTeam'],
       };
 
+  
+
       return response;
     });
     return refactoringData;
@@ -409,10 +364,5 @@ export class CrawlingService {
       gameResults.push({ winnerTeam, loseTeam });
     });
     return gameResults;
-  }
-
-  async fetchWithDelay(url, options, delay) {
-    await new Promise(resolve => setTimeout(resolve, delay));  // 1초 지연
-    return fetch(url, options);
   }
 }
