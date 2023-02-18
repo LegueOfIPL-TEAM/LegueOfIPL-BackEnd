@@ -10,7 +10,7 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const PORT = configService.get('SERVER_PORT');
-
+  
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -22,7 +22,8 @@ async function bootstrap() {
   setupSwagger(app);
   app.enableCors();
   app.useGlobalFilters(new HttpExceptionFilter());
-
+  
+  
   await app.listen(PORT);
 
   if (configService.get('NODE_ENV') === 'development') {
