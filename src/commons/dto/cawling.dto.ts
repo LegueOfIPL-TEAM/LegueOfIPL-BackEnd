@@ -7,3 +7,6 @@ export interface matchData {
 }
 
 
+export class getMatchDetailUrl {
+    url: string[]
+}

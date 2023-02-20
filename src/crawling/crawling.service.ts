@@ -2,6 +2,10 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { response } from 'express';
+import { getMatchDetailUrl } from 'src/commons/dto/cawling.dto';
+import { enviroment } from 'src/commons/enviroment';
+import { getManyMatchListAndUrls, getMatchDetails } from 'src/commons/interface/crawling.interface';
+import * as inviroment from '../commons/enviroment'
 
 @Injectable()
 export class CrawlingService {
@@ -18,12 +22,86 @@ export class CrawlingService {
 
     const allOfDataWithRefact = this.lastRefacDataOfSa({matchListInfo, battleLogs: refacBattleLog, matchDetails})
   
-    return allOfDataWithRefact;
+    return allOfDataWithRefact
+  }
+  async getManyMatchList(): Promise<getManyMatchListAndUrls> {
+    const url = enviroment.urlOfMatchList;
+
+    const clienIds = enviroment.clienIds
+
+    const matchListInfo = [];
+    const battleLogUrls = [];
+    const matchResusltUrls = [];
+
+    for (const clienId of clienIds) {
+      const body = JSON.stringify({
+        clan_id: clienId,
+      });
+
+      const matchListRequest = {
+        method: 'POST',
+        url: url,
+        body,
+        headers: { 'Content-Type': 'application/json' },
+      };
+
+      const requestSpecificUrl = await fetch(url, matchListRequest);
+
+      const response = await requestSpecificUrl.json();
+
+      const { result } = response;
+
+      const clanInIPLgue = enviroment.clanNames
+
+      result.forEach((item) => {
+        const {
+          map_name: mapName,
+          match_name: matchName,
+          red_clan_name: redClanName,
+          red_clan_mark1: redClanMark1,
+          red_clan_mark2: redClanMark2,
+          blue_clan_name: blueClanName,
+          blue_clan_mark1: blueClanMark1,
+          blue_clan_mark2: blueClanMark2,
+          plimit,
+          result_wdl: resulWdl,
+          match_key: matchKey,
+          clan_no: clanNo,
+        } = item;
+
+        if (
+          mapName === '제3보급창고' &&
+          plimit === 5 &&
+          resulWdl === '승' &&
+          clanInIPLgue.includes(blueClanName) &&
+          clanInIPLgue.includes(redClanName)
+        ) {
+          const returnValue = {
+            mapName,
+            matchName,
+            redClanName,
+            redClanMark1,
+            redClanMark2,
+            blueClanName,
+            blueClanMark1,
+            blueClanMark2,
+            plimit,
+          };
+
+          const battleLogURL = `https://barracks.sa.nexon.com/api/BattleLog/GetBattleLogClan/${matchKey}/${clanNo}`;
+          const matchResultUrl = `https://barracks.sa.nexon.com/api/Match/GetMatchClanDetail/${matchKey}/C/${clienId}`
+          
+          battleLogUrls.push(battleLogURL);
+          matchResusltUrls.push(matchResultUrl);
+          matchListInfo.push(returnValue)
+        }
+      })
+    }
+    return { battleLogUrls, matchListInfo, matchResusltUrls}
   }
 
-  async getMatchDetails(urls) {
+  async getMatchDetails(urls: string[]): Promise<getMatchDetails[]> {
     const matchDetails = [];
-
     for (const [index, url] of urls.entries()) {
       const request = {
         method: 'POST',
@@ -145,150 +223,149 @@ export class CrawlingService {
     return matchUserNick;
   }
 
-  async getManyMatchList() {
-    const url = 'https://barracks.sa.nexon.com/api/ClanHome/GetClanMatchList/';
 
-    const clienIds = [
-      'sladltlek', 'BallantinesM', 'LOTUS', 'dregonlif', 'hweeparam', 'clanhanul','SkullClanz','you7501', 
-      'wonju1', 'Cherish20','dlsdus1', 'eee07', 'uava01','tjrbdlf121122112','suddenmarin', 'DZID','wdasdw', 'FS0918', 'jth9341', 
-      'asdoie','aren11', 'onespringday', 'lpcrew', 'watwta', 'baxtercian', 'withyj0', 'monster1a2a3a', 'Arcturus', '940815',
-      'aren11', 'onespringday', 'lpcrew', 'watwta', 'MiraGe', 'baxtercian', 'withyj0', 'monster1a2a3a', 'Arcturus', '940815',
-      'NumberMatch', 'pookoo', 'knonkoutkikiki', 'HardBotrio', 'roma', 'meein', 'sinzo123', 'noneplus', 'pandemic', 'dkssud13'
-    ];     
-
-    const matchListInfo = [];
-    const battleLogUrls = [];
-    const matchResusltUrls = [];
-
-    for (const clienId of clienIds) {
-      const body = JSON.stringify({
-        clan_id: clienId,
-      });
-
-      const matchListRequest = {
-        method: 'POST',
-        url: url,
-        body,
-        headers: { 'Content-Type': 'application/json' },
-      };
-
-      const requestSpecificUrl = await fetch(url, matchListRequest);
-
-      const response = await requestSpecificUrl.json();
-
-      const { result } = response;
-
-      const clanInIPLgue = [
-        'NeGlecT-','Xperia','-Ballentine_s_M-','izmir-',`'Signal'`,'Asterisk','Entertainment、','decalcomanie:)','legend1st',
-        'Cherish*','ylevoL','deIuna','vuvuzela','Gloria','dokbul','레트로폭탄','sugarcandy','♡starry','머리부시기',
-        'Bailey:','setter','GUlNNESS','wage','fierceness','MiraGe','saintlux','bellobro','surrealclan','<raiser>','sweetie',
-        'hypeus','Relive','everything','recent.wct','〃veritas','Critisism','massacre;','none+','Mentalist:','Valentina',
-      ];
-
-      result.forEach((item) => {
-        const {
-          map_name: mapName,
-          match_name: matchName,
-          red_clan_name: redClanName,
-          red_clan_mark1: redClanMark1,
-          red_clan_mark2: redClanMark2,
-          blue_clan_name: blueClanName,
-          blue_clan_mark1: blueClanMark1,
-          blue_clan_mark2: blueClanMark2,
-          plimit,
-          result_wdl: resulWdl,
-          match_key: matchKey,
-          clan_no: clanNo,
-        } = item;
-
-        if (
-          mapName === '제3보급창고' &&
-          plimit === 5 &&
-          resulWdl === '승' &&
-          clanInIPLgue.includes(blueClanName) &&
-          clanInIPLgue.includes(redClanName)
-        ) {
-          const returnValue = {
-            mapName,
-            matchName,
-            redClanName,
-            redClanMark1,
-            redClanMark2,
-            blueClanName,
-            blueClanMark1,
-            blueClanMark2,
-            plimit,
-          };
-
-          const battleLogURL = `https://barracks.sa.nexon.com/api/BattleLog/GetBattleLogClan/${matchKey}/${clanNo}`;
-          const matchResultUrl = `https://barracks.sa.nexon.com/api/Match/GetMatchClanDetail/${matchKey}/C/${clienId}`
-          
-          battleLogUrls.push(battleLogURL);
-          matchResusltUrls.push(matchResultUrl);
-          matchListInfo.push(matchListInfo)
-        }
-      })
-    }
-    return { battleLogUrls, matchListInfo, matchResusltUrls}
-  }
 
   lastRefacDataOfSa({ matchListInfo, battleLogs, matchDetails }) {
-    const refactoringData = matchListInfo.map((item, index) => {
-      // match of list information
-      const {
-        mapName,
-        matchName,
-        redClanName,
-        redClanMark1,
-        redClanMark2,
-        blueClanName,
-        blueClanMark1,
-        blueClanMark2,
-      } = item;
-
-      if (matchDetails[index]['redResult'] === 'win') {
-        const response = {
-          matchTime: matchDetails[index]['matchTime'],
-          mapName,
-          matchName,
-          plimit: '5vs5',
-          winTeamName: matchDetails[index]['winTeamName'],
-          loseTeamName: matchDetails[index]['loseTeamName'],
-          redClanName,
-          redClanMark1,
-          redClanMark2,
-          redUserList: battleLogs[index]['winnerTeam'],
-          blueClanMark1,
-          blueClanMark2,
-          blueClanName,
-          blueUserList: battleLogs[index]['loseTeam'],
-        };
-
-        return response;
+    matchDetails.forEach((match) => {
+      const { blueResult, redResult, blueUserList, redUserList } = match;
+      console.log(blueResult)
+      const winnerTeam = blueResult === "win" ? blueUserList : redUserList;
+      const loseTeam = blueResult === "lose" ? blueUserList : redUserList;
+  
+      
+      // winnerTeam과 loseTeam의 유저 정보를 matchDetails의 정보로 갱신
+      winnerTeam.forEach((user) => {
+        const existingUser = battleLogs.find((u) => u.nickname === user.nickname);
+        if (existingUser) {
+          user.damage = existingUser.damage;
+        }
+      });
+      loseTeam.forEach((user) => {
+        const existingUser = battleLogs.find((u) => u.nickname === user.nickname);
+        if (existingUser) {
+          user.damage = existingUser.damage;
+        }
+      });
+  
+      // matchDetails에 포함되지 않은 유저 정보를 arr에서 찾아 삽입
+      battleLogs.forEach((user) => {
+        const isUserInMatch = [...blueUserList, ...redUserList].some(
+          (u) => u.nickname === user.nickname
+        );
+        if (!isUserInMatch) {
+          const newUser = {
+            nickname: user.nickname,
+            kill: 0,
+            death: 0,
+            assist: 0,
+            damage: user.damage,
+          };
+          if (winnerTeam.some((u) => u.nickname === user.nickname)) {
+            const existingUser = winnerTeam.find(
+              (u) => u.nickname === user.nickname
+            );
+            newUser.kill = existingUser.kill;
+            newUser.death = existingUser.death;
+            newUser.assist = existingUser.assist;
+            user.damage = existingUser.damage;
+          } else if (loseTeam.some((u) => u.nickname === user.nickname)) {
+            const existingUser = loseTeam.find(
+              (u) => u.nickname === user.nickname
+            );
+            newUser.kill = existingUser.kill;
+            newUser.death = existingUser.death;
+            newUser.assist = existingUser.assist;
+            user.damage = existingUser.damage;
+          }
+          if (newUser.nickname) {
+            if (newUser.nickname[0] === "[") {
+              winnerTeam.unshift(newUser);
+            } else {
+              loseTeam.unshift(newUser);
+            }
+          }
+          match.blueUserList = blueUserList;
+          match.redUserList = redUserList;
+        }
+      });
+    });
+  
+    // arr 배열을 갱신
+    battleLogs.forEach((user) => {
+      const matchingUser = [...matchDetails.flatMap(match => match.blueUserList), ...matchDetails.flatMap(match => match.redUserList)].find(
+        (u) => u.nickname === user.nickname
+      );
+      if (matchingUser) {
+        user.damage = matchingUser.damage;
       }
 
-      const response = {
-        matchTime: matchDetails[index]['matchTime'],
-        mapName,
-        matchName,
-        plimit: '5vs5',
-        winTeamName: matchDetails[index]['winTeamName'],
-        loseTeamName: matchDetails[index]['loseTeamName'],
-        redClanName,
-        redClanMark1,
-        redClanMark2,
-        redUserList: battleLogs[index]['loseTeam'],
-        blueClanMark1,
-        blueClanMark2,
-        blueClanName,
-        blueUserList: battleLogs[index]['winnerTeam'],
-      };
+    });
+
+    return battleLogs
+      // const blueWinResult = {
+      //   matchListInfo: matchListInfo[index],
+      //   winnerTeam: {
+      //     winnerTeam,
+      //     damage: matchDetails[index]
+      //   }
+      // }
+      
+      // return blueWinResult
+    
+    // const refactoringData = matchListInfo.map((item, index) => {
+    //   const {
+    //     mapName,
+    //     matchName,
+    //     redClanName,
+    //     redClanMark1,
+    //     redClanMark2,
+    //     blueClanName,
+    //     blueClanMark1,
+    //     blueClanMark2,
+    //   } = item;
+
+    //   if (matchDetails[index]['redResult'] === 'win') {
+    //     const response = {
+    //       matchTime: matchDetails[index]['matchTime'],
+    //       mapName,
+    //       matchName,
+    //       plimit: '5vs5',
+    //       winTeamName: matchDetails[index]['winTeamName'],
+    //       loseTeamName: matchDetails[index]['loseTeamName'],
+    //       redClanName,
+    //       redClanMark1,
+    //       redClanMark2,
+    //       redUserList: battleLogs[index]['winnerTeam'],
+    //       blueClanMark1,
+    //       blueClanMark2,
+    //       blueClanName,
+    //       blueUserList: battleLogs[index]['loseTeam'], 
+    //     };
+
+    //     return response;
+    //   }
+
+    //   const response = {
+    //     matchTime: matchDetails[index]['matchTime'],
+    //     mapName,
+    //     matchName,
+    //     plimit: '5vs5',
+    //     winTeamName: matchDetails[index]['winTeamName'],
+    //     loseTeamName: matchDetails[index]['loseTeamName'],
+    //     redClanName,
+    //     redClanMark1,
+    //     redClanMark2,
+    //     redUserList: battleLogs[index]['loseTeam'],
+    //     blueClanMark1,
+    //     blueClanMark2,
+    //     blueClanName,
+    //     blueUserList: battleLogs[index]['winnerTeam'],
+    //   };
 
   
 
-      return response;
-    });
-    return refactoringData;
+    //   return response;
+    // });
   }
 
   refactoringBattleLogData(battleLogs) {
@@ -316,27 +393,13 @@ export class CrawlingService {
             death: 0,
             assist: 0,
             weapon: weapon === 'rifle' || weapon === 'sniper' ? weapon : null,
-          };
+          }
         }
-
+      
         if (eventCategory === 'kill') {
           winnerTeam[event.winTeamUserNick].kill += 1;
         } else if (eventCategory === 'death') {
           winnerTeam[event.winTeamUserNick].death += 1;
-        } else if (eventCategory === 'assist') {
-          winnerTeam[event.winTeamUserNick].assist += 1;
-        }
-
-        switch (eventCategory) {
-          case 'kill':
-            winnerTeam[event.winTeamUserNick].kill += 1;
-            break;
-          case 'death':
-            winnerTeam[event.winTeamUserNick].death += 1;
-            break;
-          case 'assist':
-            winnerTeam[event.winTeamUserNick].assist += 1;
-            break;
         }
 
         if (!loseTeam[loseTeamUserNick]) {
@@ -356,12 +419,10 @@ export class CrawlingService {
           loseTeam[loseTeamUserNick].kill += 1;
         } else if (event.targetEventType === 'death') {
           loseTeam[loseTeamUserNick].death += 1;
-        } else if (event.targetEventType === 'assist') {
-          loseTeam[loseTeamUserNick].assist += 1;
         }
       });
 
-      gameResults.push({ winnerTeam, loseTeam });
+      gameResults.push(winnerTeam, loseTeam);
     });
     return gameResults;
   }
