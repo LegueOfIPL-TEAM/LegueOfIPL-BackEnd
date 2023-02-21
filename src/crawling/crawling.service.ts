@@ -1,33 +1,35 @@
-import {
-  Injectable,
-} from '@nestjs/common';
-import { response } from 'express';
-import { getMatchDetailUrl } from 'src/commons/dto/cawling.dto';
+import { Injectable } from '@nestjs/common';
 import { enviroment } from 'src/commons/enviroment';
-import { getManyMatchListAndUrls, getMatchDetails } from 'src/commons/interface/crawling.interface';
-import * as inviroment from '../commons/enviroment'
+import {
+  getManyMatchListAndUrls,
+  getMatchDetails,
+} from 'src/commons/interface/crawling.interface';
 
 @Injectable()
 export class CrawlingService {
   async allOfDatasInSa() {
     const getMatchList = await this.getManyMatchList();
 
-    const { battleLogUrls, matchListInfo, matchResusltUrls } = getMatchList
+    const { battleLogUrls, matchListInfo, matchResusltUrls } = getMatchList;
 
-    const matchDetails = await this.getMatchDetails(matchResusltUrls)
+    const matchDetails = await this.getMatchDetails(matchResusltUrls);
 
-    const battleLogs = await this.getBattleLog(battleLogUrls)
+    const battleLogs = await this.getBattleLog(battleLogUrls);
 
-    const refacBattleLog = this.refactoringBattleLogData(battleLogs)
+    const refacBattleLog = this.refactoringBattleLogData(battleLogs);
 
-    const allOfDataWithRefact = this.lastRefacDataOfSa({matchListInfo, battleLogs: refacBattleLog, matchDetails})
-  
-    return allOfDataWithRefact
+    const allOfDataWithRefact = this.lastRefacDataOfSa({
+      matchListInfo,
+      battleLogs: refacBattleLog,
+      matchDetails,
+    });
+
+    return allOfDataWithRefact;
   }
   async getManyMatchList(): Promise<getManyMatchListAndUrls> {
     const url = enviroment.urlOfMatchList;
 
-    const clienIds = enviroment.clienIds
+    const clienIds = enviroment.clienIds;
 
     const matchListInfo = [];
     const battleLogUrls = [];
@@ -51,7 +53,7 @@ export class CrawlingService {
 
       const { result } = response;
 
-      const clanInIPLgue = enviroment.clanNames
+      const clanInIPLgue = enviroment.clanNames;
 
       result.forEach((item) => {
         const {
@@ -89,15 +91,15 @@ export class CrawlingService {
           };
 
           const battleLogURL = `https://barracks.sa.nexon.com/api/BattleLog/GetBattleLogClan/${matchKey}/${clanNo}`;
-          const matchResultUrl = `https://barracks.sa.nexon.com/api/Match/GetMatchClanDetail/${matchKey}/C/${clienId}`
-          
+          const matchResultUrl = `https://barracks.sa.nexon.com/api/Match/GetMatchClanDetail/${matchKey}/C/${clienId}`;
+
           battleLogUrls.push(battleLogURL);
           matchResusltUrls.push(matchResultUrl);
-          matchListInfo.push(returnValue)
+          matchListInfo.push(returnValue);
         }
-      })
+      });
     }
-    return { battleLogUrls, matchListInfo, matchResusltUrls}
+    return { battleLogUrls, matchListInfo, matchResusltUrls };
   }
 
   async getMatchDetails(urls: string[]): Promise<getMatchDetails[]> {
@@ -132,7 +134,7 @@ export class CrawlingService {
         loseTeamName,
         matchTime,
         redUserList: redUserList.map((user) => {
-          const { nickname, kill, death, assist, damage } = user;
+          const { nickname, kill, death, assist, damage, grade } = user;
 
           const redUserResponse = {
             nickname,
@@ -140,11 +142,12 @@ export class CrawlingService {
             death,
             assist,
             damage,
+            grade,
           };
           return redUserResponse;
         }),
         blueUserList: blueUserList.map((user) => {
-          const { nickname, kill, death, assist, damage } = user;
+          const { nickname, kill, death, assist, damage, grade } = user;
 
           const blueUserResponse = {
             nickname,
@@ -152,6 +155,7 @@ export class CrawlingService {
             death,
             assist,
             damage,
+            grade,
           };
           return blueUserResponse;
         }),
@@ -174,11 +178,10 @@ export class CrawlingService {
         };
 
         const requestSpecificUrl = await fetch(url, request);
-        
-        if(requestSpecificUrl.status === 500) return []
-        
+
+        if (requestSpecificUrl.status === 500) return [];
+
         const response = await requestSpecificUrl.json();
-        
 
         const { battleLog } = response;
 
@@ -223,157 +226,102 @@ export class CrawlingService {
     return matchUserNick;
   }
 
-
-
   lastRefacDataOfSa({ matchListInfo, battleLogs, matchDetails }) {
-    matchDetails.forEach((match) => {
+    matchDetails.forEach((match, index) => {
       const { blueResult, redResult, blueUserList, redUserList } = match;
-      console.log(blueResult)
-      const winnerTeam = blueResult === "win" ? blueUserList : redUserList;
-      const loseTeam = blueResult === "lose" ? blueUserList : redUserList;
-  
-      
-      // winnerTeam과 loseTeam의 유저 정보를 matchDetails의 정보로 갱신
+
+      const winnerTeam = blueResult === 'win' ? blueUserList : redUserList;
+      const loseTeam = blueResult === 'lose' ? blueUserList : redUserList;
+      const winnerInBattleLogs = battleLogs[index]['winnerTeam'];
+      const loserInBattleLogs = battleLogs[index]['loseTeam'];
+
       winnerTeam.forEach((user) => {
-        const existingUser = battleLogs.find((u) => u.nickname === user.nickname);
-        if (existingUser) {
-          user.damage = existingUser.damage;
-        }
-      });
-      loseTeam.forEach((user) => {
-        const existingUser = battleLogs.find((u) => u.nickname === user.nickname);
-        if (existingUser) {
-          user.damage = existingUser.damage;
-        }
-      });
-  
-      // matchDetails에 포함되지 않은 유저 정보를 arr에서 찾아 삽입
-      battleLogs.forEach((user) => {
-        const isUserInMatch = [...blueUserList, ...redUserList].some(
-          (u) => u.nickname === user.nickname
+        const existingUser = winnerInBattleLogs.find(
+          (u) => u.usernick === user.nickname,
         );
-        if (!isUserInMatch) {
-          const newUser = {
-            nickname: user.nickname,
-            kill: 0,
-            death: 0,
-            assist: 0,
-            damage: user.damage,
-          };
-          if (winnerTeam.some((u) => u.nickname === user.nickname)) {
-            const existingUser = winnerTeam.find(
-              (u) => u.nickname === user.nickname
-            );
-            newUser.kill = existingUser.kill;
-            newUser.death = existingUser.death;
-            newUser.assist = existingUser.assist;
-            user.damage = existingUser.damage;
-          } else if (loseTeam.some((u) => u.nickname === user.nickname)) {
-            const existingUser = loseTeam.find(
-              (u) => u.nickname === user.nickname
-            );
-            newUser.kill = existingUser.kill;
-            newUser.death = existingUser.death;
-            newUser.assist = existingUser.assist;
-            user.damage = existingUser.damage;
-          }
-          if (newUser.nickname) {
-            if (newUser.nickname[0] === "[") {
-              winnerTeam.unshift(newUser);
-            } else {
-              loseTeam.unshift(newUser);
-            }
-          }
-          match.blueUserList = blueUserList;
-          match.redUserList = redUserList;
+        if (existingUser) {
+          existingUser.grade = user.grade;
+          existingUser.damage = user.damage;
+        }
+      });
+
+      loseTeam.forEach((user) => {
+        const existingUser = loserInBattleLogs.find(
+          (u) => u.usernick === user.nickname,
+        );
+        if (existingUser) {
+          existingUser.grade = user.grade;
+          existingUser.damage = user.damage;
         }
       });
     });
-  
-    // arr 배열을 갱신
-    battleLogs.forEach((user) => {
-      const matchingUser = [...matchDetails.flatMap(match => match.blueUserList), ...matchDetails.flatMap(match => match.redUserList)].find(
-        (u) => u.nickname === user.nickname
-      );
-      if (matchingUser) {
-        user.damage = matchingUser.damage;
+
+    const refactoringData = matchListInfo.map((item, index) => {
+      const {
+        mapName,
+        matchName,
+        redClanName,
+        redClanMark1,
+        redClanMark2,
+        blueClanName,
+        blueClanMark1,
+        blueClanMark2,
+      } = item;
+
+      if (matchDetails[index]['redResult'] === 'win') {
+        const response = {
+          matchTime: matchDetails[index]['matchTime'],
+          mapName,
+          matchName,
+          plimit: '5vs5',
+          redResult: matchDetails[index]['redResult'],
+          redClanName,
+          redClanMark1,
+          redClanMark2,
+          redUserList: battleLogs[index]['winnerTeam'],
+          blueResult: matchDetails[index]['blueResult'],
+          blueClanName,
+          blueClanMark1,
+          blueClanMark2,
+          blueUserList: battleLogs[index]['loseTeam'],
+        };
+
+        return response;
       }
 
+      const response = {
+        matchTime: matchDetails[index]['matchTime'],
+        mapName,
+        matchName,
+        plimit: '5vs5',
+        blueResult: matchDetails[index]['blueResult'],
+        blueClanName,
+        blueClanMark1,
+        blueClanMark2,
+        blueUserList: battleLogs[index]['winnerTeam'],
+        redResult: matchDetails[index]['redResult'],
+        redClanName,
+        redClanMark1,
+        redClanMark2,
+        redUserList: battleLogs[index]['loseTeam'],
+      };
+      return response;
     });
 
-    return battleLogs
-      // const blueWinResult = {
-      //   matchListInfo: matchListInfo[index],
-      //   winnerTeam: {
-      //     winnerTeam,
-      //     damage: matchDetails[index]
-      //   }
-      // }
-      
-      // return blueWinResult
-    
-    // const refactoringData = matchListInfo.map((item, index) => {
-    //   const {
-    //     mapName,
-    //     matchName,
-    //     redClanName,
-    //     redClanMark1,
-    //     redClanMark2,
-    //     blueClanName,
-    //     blueClanMark1,
-    //     blueClanMark2,
-    //   } = item;
-
-    //   if (matchDetails[index]['redResult'] === 'win') {
-    //     const response = {
-    //       matchTime: matchDetails[index]['matchTime'],
-    //       mapName,
-    //       matchName,
-    //       plimit: '5vs5',
-    //       winTeamName: matchDetails[index]['winTeamName'],
-    //       loseTeamName: matchDetails[index]['loseTeamName'],
-    //       redClanName,
-    //       redClanMark1,
-    //       redClanMark2,
-    //       redUserList: battleLogs[index]['winnerTeam'],
-    //       blueClanMark1,
-    //       blueClanMark2,
-    //       blueClanName,
-    //       blueUserList: battleLogs[index]['loseTeam'], 
-    //     };
-
-    //     return response;
-    //   }
-
-    //   const response = {
-    //     matchTime: matchDetails[index]['matchTime'],
-    //     mapName,
-    //     matchName,
-    //     plimit: '5vs5',
-    //     winTeamName: matchDetails[index]['winTeamName'],
-    //     loseTeamName: matchDetails[index]['loseTeamName'],
-    //     redClanName,
-    //     redClanMark1,
-    //     redClanMark2,
-    //     redUserList: battleLogs[index]['loseTeam'],
-    //     blueClanMark1,
-    //     blueClanMark2,
-    //     blueClanName,
-    //     blueUserList: battleLogs[index]['winnerTeam'],
-    //   };
-
-  
-
-    //   return response;
-    // });
+    return refactoringData;
   }
 
   refactoringBattleLogData(battleLogs) {
     const gameResults = [];
 
     battleLogs.forEach((battleLog) => {
-      const winnerTeam = {};
-      const loseTeam = {};
+      const result = {
+        winnerTeam: [],
+        loseTeam: [],
+      };
+
+      const winners = [];
+      const losers = [];
 
       battleLog.forEach((event) => {
         const {
@@ -384,45 +332,64 @@ export class CrawlingService {
           winTeamUserNick,
           eventCategory,
           loseTeamUserNick,
+          targetEventType,
         } = event;
 
-        if (!winnerTeam[winTeamUserNick]) {
-          winnerTeam[winTeamUserNick] = {
+        let winnerTeamUser = winners.find(
+          (user) => user.usernick === winTeamUserNick,
+        );
+        if (!winnerTeamUser) {
+          winnerTeamUser = {
+            usernick: winTeamUserNick,
             userNexonSn,
             kill: 0,
             death: 0,
             assist: 0,
+            damage: 0,
+            grade: '',
             weapon: weapon === 'rifle' || weapon === 'sniper' ? weapon : null,
-          }
-        }
-      
-        if (eventCategory === 'kill') {
-          winnerTeam[event.winTeamUserNick].kill += 1;
-        } else if (eventCategory === 'death') {
-          winnerTeam[event.winTeamUserNick].death += 1;
+          };
+          winners.push(winnerTeamUser);
         }
 
-        if (!loseTeam[loseTeamUserNick]) {
-          loseTeam[loseTeamUserNick] = {
-            targetUserNexonSn,
+        let loseTeamUser = losers.find(
+          (user) => user.usernick === loseTeamUserNick,
+        );
+        if (!loseTeamUser) {
+          loseTeamUser = {
+            usernick: loseTeamUserNick,
+            userNexonSn: targetUserNexonSn,
             kill: 0,
             death: 0,
             assist: 0,
+            damage: 0,
+            grade: '',
             weapon:
               targetWeapon === 'rifle' || targetWeapon === 'sniper'
                 ? targetWeapon
                 : null,
           };
+          losers.push(loseTeamUser);
         }
 
-        if (event.targetEventType === 'kill') {
-          loseTeam[loseTeamUserNick].kill += 1;
-        } else if (event.targetEventType === 'death') {
-          loseTeam[loseTeamUserNick].death += 1;
+        if (eventCategory === 'kill') {
+          winnerTeamUser.kill += 1;
+        } else if (eventCategory === 'death') {
+          winnerTeamUser.death += 1;
+        } else if (eventCategory === 'assist') {
+          winnerTeamUser.assist += 1;
+        }
+
+        if (targetEventType === 'kill') {
+          loseTeamUser.kill += 1;
+        } else if (targetEventType === 'death') {
+          loseTeamUser.death += 1;
         }
       });
 
-      gameResults.push(winnerTeam, loseTeam);
+      result.winnerTeam = winners;
+      result.loseTeam = losers;
+      gameResults.push(result);
     });
     return gameResults;
   }
