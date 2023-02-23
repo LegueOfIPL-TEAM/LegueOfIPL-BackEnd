@@ -3,11 +3,14 @@ import { enviroment } from 'src/commons/enviroment';
 import {
   getManyMatchListAndUrls,
   getMatchDetails,
+  GameLogs,
+  AllUserInMatch,
+  AllOfDataAfterRefactoring,
 } from 'src/commons/interface/crawling.interface';
 
 @Injectable()
 export class CrawlingService {
-  async allOfDatasInSa() {
+  async allOfDatasInSa(): Promise<AllOfDataAfterRefactoring[]> {
     const getMatchList = await this.getManyMatchList();
 
     const { battleLogUrls, matchListInfo, matchResusltUrls } = getMatchList;
@@ -16,11 +19,11 @@ export class CrawlingService {
 
     const battleLogs = await this.getBattleLog(battleLogUrls);
 
-    const refacBattleLog = this.refactoringBattleLogData(battleLogs);
+    const refactBattleLog = this.refactoringBattleLogData(battleLogs);
 
     const allOfDataWithRefact = this.lastRefacDataOfSa({
       matchListInfo,
-      battleLogs: refacBattleLog,
+      battleLogs: refactBattleLog,
       matchDetails,
     });
 
@@ -166,7 +169,7 @@ export class CrawlingService {
     return matchDetails;
   }
 
-  async getBattleLog(urls) {
+  async getBattleLog(urls: string[]): Promise<GameLogs> {
     const matchUserNick = [];
 
     const results = await Promise.all(
@@ -185,7 +188,7 @@ export class CrawlingService {
 
         const { battleLog } = response;
 
-        const battleLogs = battleLog.map((values, index) => {
+        const battleLogs = battleLog.map((values) => {
           const {
             user_nick: usernick,
             target_user_nick: targetUsernick,
@@ -197,28 +200,27 @@ export class CrawlingService {
             user_nexon_sn: userNexonSn,
             target_event_type: targetEventType,
           } = values;
-
           if (
-            targetTeamNo === 0 &&
-            ((eventCategory || targetEventType) === 'bomb' || 'mission')
+            targetTeamNo !== 0 &&
+            eventCategory !== 'mission' &&
+            targetEventType !== 'bomb'
           ) {
+            const response = {
+              winTeamUserNick: usernick,
+              eventCategory,
+              userNexonSn,
+              weapon,
+              loseTeamUserNick: targetUsernick,
+              targetEventType,
+              targetUserNexonSn,
+              targetWeapon,
+            };
+
+            return response;
           }
-
-          const response = {
-            winTeamUserNick: usernick,
-            eventCategory,
-            userNexonSn,
-            weapon,
-            loseTeamUserNick: targetUsernick,
-            targetEventType,
-            targetUserNexonSn,
-            targetWeapon,
-          };
-
-          return response;
         });
 
-        return battleLogs;
+        return battleLogs.filter((obj) => obj !== undefined);
       }),
     );
     matchUserNick.push(...results);
@@ -226,9 +228,13 @@ export class CrawlingService {
     return matchUserNick;
   }
 
-  lastRefacDataOfSa({ matchListInfo, battleLogs, matchDetails }) {
+  lastRefacDataOfSa({
+    matchListInfo,
+    battleLogs,
+    matchDetails,
+  }): AllOfDataAfterRefactoring[] {
     matchDetails.forEach((match, index) => {
-      const { blueResult, redResult, blueUserList, redUserList } = match;
+      const { blueResult, blueUserList, redUserList } = match;
 
       const winnerTeam = blueResult === 'win' ? blueUserList : redUserList;
       const loseTeam = blueResult === 'lose' ? blueUserList : redUserList;
@@ -240,6 +246,7 @@ export class CrawlingService {
           (u) => u.usernick === user.nickname,
         );
         if (existingUser) {
+          existingUser.assist = user.assist;
           existingUser.grade = user.grade;
           existingUser.damage = user.damage;
         }
@@ -250,6 +257,7 @@ export class CrawlingService {
           (u) => u.usernick === user.nickname,
         );
         if (existingUser) {
+          existingUser.assist = user.assist;
           existingUser.grade = user.grade;
           existingUser.damage = user.damage;
         }
@@ -311,7 +319,7 @@ export class CrawlingService {
     return refactoringData;
   }
 
-  refactoringBattleLogData(battleLogs) {
+  refactoringBattleLogData(battleLogs): AllUserInMatch[] {
     const gameResults = [];
 
     battleLogs.forEach((battleLog) => {
@@ -391,6 +399,9 @@ export class CrawlingService {
       result.loseTeam = losers;
       gameResults.push(result);
     });
+
+    gameResults.filter((e) => e.winnerTeam.filter((t) => t.usernick !== null));
+
     return gameResults;
   }
 }
