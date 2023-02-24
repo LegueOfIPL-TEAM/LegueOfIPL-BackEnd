@@ -1,4 +1,5 @@
 export interface AllOfDataAfterRefactoring {
+  matchKey: number;
   matchTime: Date;
   mapName: string;
   matchName: string;

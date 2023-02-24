@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  AllOfDataBeforRefactoring,
-  BattleLogs,
-} from 'src/commons/dto/cawling.dto';
+
 import { enviroment } from 'src/commons/enviroment';
 import {
   getManyMatchListAndUrls,
@@ -11,6 +8,10 @@ import {
   AllUserInMatch,
   AllOfDataAfterRefactoring,
 } from 'src/commons/interface/crawling.interface';
+import {
+  AllOfDataBeforRefactoring,
+  BattleLogs,
+} from 'src/commons/dto/cawling.dto';
 
 @Injectable()
 export class CrawlingService {
@@ -110,7 +111,7 @@ export class CrawlingService {
     return { battleLogUrls, matchListInfos, matchResusltUrls };
   }
 
-  async getMatchDetails(urls: string[]): Promise<getMatchDetails[]> {
+  async getMatchDetails(urls: string[]) {
     const matchDetails = [];
     for (const [index, url] of urls.entries()) {
       const request = {
@@ -122,7 +123,8 @@ export class CrawlingService {
       const requestSpecificUrl = await fetch(url, request);
       const response = await requestSpecificUrl.json();
 
-      const { matchResultDataInfo, redUserList, blueUserList } = response;
+      const { matchResultDataInfo, redUserList, blueUserList, myMatchRating } =
+        response;
       const {
         lose_team_name: loseTeamName,
         win_team_name: winTeamName,
@@ -132,8 +134,9 @@ export class CrawlingService {
         blue_clan_no: blueClanNo,
         red_clan_no: redClanNo,
       } = matchResultDataInfo;
-
+      const { match_key: matchKey } = myMatchRating;
       const returnValue = {
+        matchKey,
         blueResult,
         blueClanNo,
         redResult,
@@ -283,6 +286,7 @@ export class CrawlingService {
 
       if (matchDetails[index]['redResult'] === 'win') {
         const response = {
+          matchKey: matchDetails[index]['matchKey'],
           matchTime: matchDetails[index]['matchTime'],
           mapName,
           matchName,
@@ -303,6 +307,7 @@ export class CrawlingService {
       }
 
       const response = {
+        matchKey: matchDetails[index]['matchKey'],
         matchTime: matchDetails[index]['matchTime'],
         mapName,
         matchName,

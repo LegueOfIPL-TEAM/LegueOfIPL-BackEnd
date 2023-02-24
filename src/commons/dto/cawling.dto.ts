@@ -9,6 +9,7 @@ export class FirstRefactoringBattleLogs {
   loseTeam: UserList[];
 }
 export class getMatchDetails {
+  matchKey: number;
   blueResult: string;
   blueClanNo: string;
   redResult: string;
