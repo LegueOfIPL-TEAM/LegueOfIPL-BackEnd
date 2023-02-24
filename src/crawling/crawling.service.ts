@@ -1,4 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import {
+  AllOfDataBeforRefactoring,
+  BattleLogs,
+} from 'src/commons/dto/cawling.dto';
 import { enviroment } from 'src/commons/enviroment';
 import {
   getManyMatchListAndUrls,
@@ -13,7 +17,7 @@ export class CrawlingService {
   async allOfDatasInSa(): Promise<AllOfDataAfterRefactoring[]> {
     const getMatchList = await this.getManyMatchList();
 
-    const { battleLogUrls, matchListInfo, matchResusltUrls } = getMatchList;
+    const { battleLogUrls, matchListInfos, matchResusltUrls } = getMatchList;
 
     const matchDetails = await this.getMatchDetails(matchResusltUrls);
 
@@ -22,19 +26,20 @@ export class CrawlingService {
     const refactBattleLog = this.refactoringBattleLogData(battleLogs);
 
     const allOfDataWithRefact = this.lastRefacDataOfSa({
-      matchListInfo,
+      matchListInfos,
       battleLogs: refactBattleLog,
       matchDetails,
     });
 
     return allOfDataWithRefact;
   }
+
   async getManyMatchList(): Promise<getManyMatchListAndUrls> {
     const url = enviroment.urlOfMatchList;
 
     const clienIds = enviroment.clienIds;
 
-    const matchListInfo = [];
+    const matchListInfos = [];
     const battleLogUrls = [];
     const matchResusltUrls = [];
 
@@ -98,11 +103,11 @@ export class CrawlingService {
 
           battleLogUrls.push(battleLogURL);
           matchResusltUrls.push(matchResultUrl);
-          matchListInfo.push(returnValue);
+          matchListInfos.push(returnValue);
         }
       });
     }
-    return { battleLogUrls, matchListInfo, matchResusltUrls };
+    return { battleLogUrls, matchListInfos, matchResusltUrls };
   }
 
   async getMatchDetails(urls: string[]): Promise<getMatchDetails[]> {
@@ -229,10 +234,10 @@ export class CrawlingService {
   }
 
   lastRefacDataOfSa({
-    matchListInfo,
+    matchListInfos,
     battleLogs,
     matchDetails,
-  }): AllOfDataAfterRefactoring[] {
+  }: AllOfDataBeforRefactoring): AllOfDataAfterRefactoring[] {
     matchDetails.forEach((match, index) => {
       const { blueResult, blueUserList, redUserList } = match;
 
@@ -243,7 +248,7 @@ export class CrawlingService {
 
       winnerTeam.forEach((user) => {
         const existingUser = winnerInBattleLogs.find(
-          (u) => u.usernick === user.nickname,
+          (u) => u.nickname === user.nickname,
         );
         if (existingUser) {
           existingUser.assist = user.assist;
@@ -254,7 +259,7 @@ export class CrawlingService {
 
       loseTeam.forEach((user) => {
         const existingUser = loserInBattleLogs.find(
-          (u) => u.usernick === user.nickname,
+          (u) => u.nickname === user.nickname,
         );
         if (existingUser) {
           existingUser.assist = user.assist;
@@ -264,7 +269,7 @@ export class CrawlingService {
       });
     });
 
-    const refactoringData = matchListInfo.map((item, index) => {
+    const refactoringData = matchListInfos.map((item, index) => {
       const {
         mapName,
         matchName,
@@ -319,7 +324,7 @@ export class CrawlingService {
     return refactoringData;
   }
 
-  refactoringBattleLogData(battleLogs): AllUserInMatch[] {
+  refactoringBattleLogData(battleLogs: BattleLogs[][]): AllUserInMatch[] {
     const gameResults = [];
 
     battleLogs.forEach((battleLog) => {
@@ -344,11 +349,11 @@ export class CrawlingService {
         } = event;
 
         let winnerTeamUser = winners.find(
-          (user) => user.usernick === winTeamUserNick,
+          (user) => user.nickname === winTeamUserNick,
         );
         if (!winnerTeamUser) {
           winnerTeamUser = {
-            usernick: winTeamUserNick,
+            nickname: winTeamUserNick,
             userNexonSn,
             kill: 0,
             death: 0,
@@ -361,11 +366,11 @@ export class CrawlingService {
         }
 
         let loseTeamUser = losers.find(
-          (user) => user.usernick === loseTeamUserNick,
+          (user) => user.nickname === loseTeamUserNick,
         );
         if (!loseTeamUser) {
           loseTeamUser = {
-            usernick: loseTeamUserNick,
+            nickname: loseTeamUserNick,
             userNexonSn: targetUserNexonSn,
             kill: 0,
             death: 0,

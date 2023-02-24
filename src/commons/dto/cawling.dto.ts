@@ -1,7 +1,13 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+export class AllOfDataBeforRefactoring {
+  matchListInfos: MatchListInfo[];
+  battleLogs: FirstRefactoringBattleLogs[];
+  matchDetails: getMatchDetails[];
+}
 
-export class AllOfDataBeforRefactoring {}
-
+export class FirstRefactoringBattleLogs {
+  winnerTeam: UserList[];
+  loseTeam: UserList[];
+}
 export class getMatchDetails {
   blueResult: string;
   blueClanNo: string;
@@ -10,13 +16,34 @@ export class getMatchDetails {
   winTeamName: string;
   loseTeamName: string;
   matchTime: Date;
-  redUserList: userList[];
-  blueUserList: userList[];
+  redUserList: Players[];
+  blueUserList: Players[];
 }
 
-export interface userList {
-  nickname: string;
+export class MatchListInfo {
+  mapName: string;
+  matchName: string;
+  redClanName: string;
+  redClanMark1: string;
+  redClanMark2: string;
+  blueClanName: string;
+  blueClanMark1: string;
+  blueClanMark2: string;
+  plimit: number;
+}
 
+export class BattleLogs {
+  winTeamUserNick: string;
+  eventCategory: string;
+  userNexonSn: number;
+  weapon: string;
+  loseTeamUserNick: string;
+  targetEventType: string;
+  targetUserNexonSn: number;
+  targetWeapon: string;
+}
+export class UserList {
+  nickname: string;
   userNexonSn: number;
   kill: number;
   death: number;
@@ -24,4 +51,13 @@ export interface userList {
   damage: number;
   grade: string;
   weapon: string;
+}
+
+export class Players {
+  nickname: string;
+  kill: number;
+  death: number;
+  assist: number;
+  damage: number;
+  grade: string;
 }
