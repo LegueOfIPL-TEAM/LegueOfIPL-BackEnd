@@ -2,6 +2,11 @@ import { Sequelize } from 'sequelize-typescript';
 import { Board } from '../table/board.model';
 import { SEQUELIZE, DEVELOPMENT, TEST, PRODUCTION } from '../constants';
 import { databaseConfig } from './database.config';
+import { Game } from 'src/game/table/game.entity';
+import { BlueTeamInfo } from 'src/game/table/bleTeamInfo.entity';
+import { RedTeamInfo } from 'src/game/table/redTeamInfo.entity';
+import { NexonUserInfo } from 'src/game/table/userInfo.entitiy';
+import { Player } from 'src/game/table/players.entitiy';
 
 export const databaseProviders = [
   {
@@ -17,7 +22,7 @@ export const databaseProviders = [
             host: process.env.DB_HOST,
             port: process.env.DB_PORT,
             dialect: process.env.DB_DIALECT,
-          }
+          };
           break;
         case TEST:
           config = {
@@ -26,8 +31,8 @@ export const databaseProviders = [
             database: process.env.DB_NAME_TEST,
             host: process.env.DB_HOST,
             port: process.env.DB_PORT,
-            dialect: process.env.DB_DIALECT
-          }
+            dialect: process.env.DB_DIALECT,
+          };
           break;
         case PRODUCTION:
           config = {
@@ -35,15 +40,22 @@ export const databaseProviders = [
             password: process.env.DB_PASS,
             database: process.env.DB_NAME_PRODUCTION,
             host: process.env.DB_HOST,
-            dialect: process.env.DB_DIALECT
-          }
+            dialect: process.env.DB_DIALECT,
+          };
           break;
         default:
           config = databaseConfig.development;
       }
       const sequelize = new Sequelize(config);
-      sequelize.addModels([Board]);
-      await sequelize.sync();
+      sequelize.addModels([
+        Board,
+        Game,
+        BlueTeamInfo,
+        RedTeamInfo,
+        NexonUserInfo,
+        Player,
+      ]);
+      await sequelize.sync({ force: true });
       return sequelize;
     },
   },

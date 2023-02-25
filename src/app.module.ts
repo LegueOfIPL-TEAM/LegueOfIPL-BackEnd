@@ -4,6 +4,7 @@ import { validation } from './commons/utils';
 import { BoardModule } from './board/board.module';
 import { DatabaseModule } from './core/database/data.module';
 import { CrawlingModule } from './crawling/crawling.module';
+import { GameModule } from './game/game.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CrawlingModule } from './crawling/crawling.module';
     CrawlingModule,
     DatabaseModule,
     BoardModule,
+    GameModule,
   ],
 })
 export class AppModule {}
