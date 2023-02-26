@@ -3,10 +3,10 @@ import { Board } from '../table/board.model';
 import { SEQUELIZE, DEVELOPMENT, TEST, PRODUCTION } from '../constants';
 import { databaseConfig } from './database.config';
 import { Game } from 'src/game/table/game.entity';
-import { BlueTeamInfo } from 'src/game/table/bleTeamInfo.entity';
-import { RedTeamInfo } from 'src/game/table/redTeamInfo.entity';
-import { NexonUserInfo } from 'src/game/table/userInfo.entitiy';
-import { Player } from 'src/game/table/players.entitiy';
+import { ClanInfo } from 'src/game/table/clanInfo.entity';
+import { NexonUserInfo } from 'src/game/table/nexonUserInfo.entitiy';
+import { NexonUserBattleLog } from 'src/game/table/nexonUserBattleLog.entitiy';
+import { ClanMatchDetail } from 'src/game/table/clanMatchDetail.entity';
 
 export const databaseProviders = [
   {
@@ -50,10 +50,10 @@ export const databaseProviders = [
       sequelize.addModels([
         Board,
         Game,
-        BlueTeamInfo,
-        RedTeamInfo,
+        ClanInfo,
         NexonUserInfo,
-        Player,
+        NexonUserBattleLog,
+        ClanMatchDetail,
       ]);
       await sequelize.sync({ force: true });
       return sequelize;

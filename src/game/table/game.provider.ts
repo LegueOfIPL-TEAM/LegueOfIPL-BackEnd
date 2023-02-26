@@ -1,15 +1,15 @@
 import {
-  BLUE_TEAM_INFO_ENTITY,
+  CLAN_INFO,
+  ClAN_MATCH_DETAIL,
   GAME_ENTITY,
+  NEXON_USER_BATTLE_LOG,
   NEXON_USER_INFO,
-  PLAYER,
-  RED_TEAM_INFO_ENTITY,
 } from 'src/core/constants';
 import { Game } from 'src/game/table/game.entity';
-import { BlueTeamInfo } from './bleTeamInfo.entity';
-import { Player } from './players.entitiy';
-import { RedTeamInfo } from './redTeamInfo.entity';
-import { NexonUserInfo } from './userInfo.entitiy';
+import { ClanInfo } from './clanInfo.entity';
+import { ClanMatchDetail } from './clanMatchDetail.entity';
+import { NexonUserBattleLog } from './nexonUserBattleLog.entitiy';
+import { NexonUserInfo } from './nexonUserInfo.entitiy';
 
 export const gameProviders = [
   {
@@ -18,17 +18,10 @@ export const gameProviders = [
   },
 ];
 
-export const blueTeamIfno = [
+export const clanInfo = [
   {
-    provide: BLUE_TEAM_INFO_ENTITY,
-    useValue: BlueTeamInfo,
-  },
-];
-
-export const redTeamInfo = [
-  {
-    provide: RED_TEAM_INFO_ENTITY,
-    useValue: RedTeamInfo,
+    provide: CLAN_INFO,
+    useVlaue: ClanInfo,
   },
 ];
 
@@ -39,9 +32,16 @@ export const nexonUserInfo = [
   },
 ];
 
-export const players = [
+export const nexonUserBattleLog = [
   {
-    provide: PLAYER,
-    useValue: Player,
+    provide: NEXON_USER_BATTLE_LOG,
+    useValue: NexonUserBattleLog,
+  },
+];
+
+export const clanMatchDetail = [
+  {
+    provide: ClAN_MATCH_DETAIL,
+    useValue: ClanMatchDetail,
   },
 ];

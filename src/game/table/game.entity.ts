@@ -7,15 +7,17 @@ import {
   CreatedAt,
   DataType,
   ForeignKey,
+  HasMany,
   HasOne,
   Model,
   PrimaryKey,
   Table,
   UpdatedAt,
 } from 'sequelize-typescript';
-import { BlueTeamInfo } from './bleTeamInfo.entity';
-import { RedTeamInfo } from './redTeamInfo.entity';
-
+import { ClanInfo } from './clanInfo.entity';
+import { ClanMatchDetail } from './clanMatchDetail.entity';
+import { NexonUserBattleLog } from './nexonUserBattleLog.entitiy';
+import { NexonUserInfo } from './nexonUserInfo.entitiy';
 @Table({
   tableName: 'Game',
   freezeTableName: true,
@@ -42,31 +44,9 @@ export class Game extends Model {
   @Column
   plimit: string;
 
-  @Column
-  blueResult: string;
+  @HasMany(() => NexonUserBattleLog)
+  nexonUserBattleLog: NexonUserBattleLog[];
 
-  @Column
-  redResult: string;
-
-  @HasOne(() => BlueTeamInfo)
-  blueTeamInfo: BlueTeamInfo;
-
-  @ForeignKey(() => BlueTeamInfo)
-  @Column
-  blueTeamInfoId: number;
-
-  @HasOne(() => RedTeamInfo)
-  redTeamInfo: RedTeamInfo;
-
-  @ForeignKey(() => RedTeamInfo)
-  @Column
-  redTeamInfoId: number;
-
-  @CreatedAt
-  @Column
-  createdAt: Date;
-
-  @UpdatedAt
-  @Column
-  updatedAt: Date;
+  @HasOne(() => ClanMatchDetail)
+  clanMatchDetail: ClanMatchDetail;
 }
