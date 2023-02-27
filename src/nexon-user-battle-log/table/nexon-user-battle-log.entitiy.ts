@@ -9,8 +9,8 @@ import {
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-import { Game } from './game.entity';
-import { NexonUserInfo } from './nexonUserInfo.entitiy';
+import { Game } from '../../game/table/game.entity';
+import { NexonUserInfo } from '../../nexon-user-info/table/nexon-user-info.entitiy';
 
 @Table({
   tableName: 'NexonUserBattleLog',

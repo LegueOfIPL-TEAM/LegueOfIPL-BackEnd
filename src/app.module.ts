@@ -5,6 +5,10 @@ import { BoardModule } from './board/board.module';
 import { DatabaseModule } from './core/database/data.module';
 import { CrawlingModule } from './crawling/crawling.module';
 import { GameModule } from './game/game.module';
+import { NexonUserBattleLogModule } from './nexon-user-battle-log/nexon-user-battle-log.module';
+import { ClanInfoModule } from './clan-info/clan-info.module';
+import { ClanMatchDetailModule } from './clan-match-detail/clan-match-detail.module';
+import { NexonUserInfoModule } from './nexon-user-info/nexon-user-info.module';
 
 @Module({
   imports: [
@@ -22,6 +26,10 @@ import { GameModule } from './game/game.module';
     DatabaseModule,
     BoardModule,
     GameModule,
+    NexonUserBattleLogModule,
+    ClanInfoModule,
+    ClanMatchDetailModule,
+    NexonUserInfoModule,
   ],
 })
 export class AppModule {}

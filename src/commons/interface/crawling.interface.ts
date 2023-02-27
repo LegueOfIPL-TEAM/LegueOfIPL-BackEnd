@@ -5,11 +5,13 @@ export interface AllOfDataAfterRefactoring {
   matchName: string;
   plimit: string;
   redResult: string;
+  redClanNo: string;
   redClanName: string;
   redClanMark1: string;
   redClanMark2: string;
   redUserList: Player[];
   blueResult: string;
+  blueClanNo: string;
   blueClanName: string;
   blueClanMark1: string;
   blueClanMark2: string;

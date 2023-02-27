@@ -1,12 +1,13 @@
 import { Sequelize } from 'sequelize-typescript';
-import { Board } from '../table/board.model';
+import { Board } from '../../board/table/board.model';
 import { SEQUELIZE, DEVELOPMENT, TEST, PRODUCTION } from '../constants';
 import { databaseConfig } from './database.config';
 import { Game } from 'src/game/table/game.entity';
-import { ClanInfo } from 'src/game/table/clanInfo.entity';
-import { NexonUserInfo } from 'src/game/table/nexonUserInfo.entitiy';
-import { NexonUserBattleLog } from 'src/game/table/nexonUserBattleLog.entitiy';
-import { ClanMatchDetail } from 'src/game/table/clanMatchDetail.entity';
+import { ClanInfo } from 'src/clan-info/table/clan-info.entity';
+import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
+import { NexonUserBattleLog } from 'src/nexon-user-battle-log/table/nexon-user-battle-log.entitiy';
+import { ClanMatchDetail } from 'src/clan-match-detail/table/clan-match-detail.entity';
+import { Logger } from '@nestjs/common';
 
 export const databaseProviders = [
   {
@@ -55,7 +56,13 @@ export const databaseProviders = [
         NexonUserBattleLog,
         ClanMatchDetail,
       ]);
-      await sequelize.sync({ force: true });
+      try {
+        await sequelize.authenticate();
+        Logger.log('Connection has been established successfully.');
+      } catch (err) {
+        Logger.error('Unable to connect to the database:', err);
+      }
+      await sequelize.sync({ force: false });
       return sequelize;
     },
   },

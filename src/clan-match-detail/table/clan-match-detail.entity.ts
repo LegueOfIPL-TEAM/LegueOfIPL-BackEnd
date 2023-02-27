@@ -10,9 +10,9 @@ import {
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-import { ClanInfo } from './clanInfo.entity';
-import { Game } from './game.entity';
-import { NexonUserInfo } from './nexonUserInfo.entitiy';
+import { ClanInfo } from '../../clan-info/table/clan-info.entity';
+import { Game } from '../../game/table/game.entity';
+import { NexonUserInfo } from '../../nexon-user-info/table/nexon-user-info.entitiy';
 
 @Table({
   tableName: 'ClanMathDetail',

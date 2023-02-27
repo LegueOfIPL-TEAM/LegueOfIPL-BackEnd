@@ -9,9 +9,8 @@ import {
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-import { ClanInfo } from './clanInfo.entity';
-import { Game } from './game.entity';
-import { NexonUserBattleLog } from './nexonUserBattleLog.entitiy';
+import { ClanInfo } from '../../clan-info/table/clan-info.entity';
+import { NexonUserBattleLog } from '../../nexon-user-battle-log/table/nexon-user-battle-log.entitiy';
 
 @Table({
   tableName: 'NexonUserInfo',
@@ -28,7 +27,7 @@ export class NexonUserInfo extends Model<ClanInfo, NexonUserBattleLog> {
   @Column
   userNexonSn: number;
 
-  @Column
+  @Column({ defaultValue: 1000 })
   ladderPoint: number;
 
   @BelongsTo(() => ClanInfo, {

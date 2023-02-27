@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { boardProviders } from 'src/core/table/board.provider';
+import { boardProviders } from 'src/board/table/board.provider';
 import { BoardController } from './board.controller';
 import { BoardService } from './board.service';
 

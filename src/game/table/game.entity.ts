@@ -14,10 +14,10 @@ import {
   Table,
   UpdatedAt,
 } from 'sequelize-typescript';
-import { ClanInfo } from './clanInfo.entity';
-import { ClanMatchDetail } from './clanMatchDetail.entity';
-import { NexonUserBattleLog } from './nexonUserBattleLog.entitiy';
-import { NexonUserInfo } from './nexonUserInfo.entitiy';
+import { ClanInfo } from '../../clan-info/table/clan-info.entity';
+import { ClanMatchDetail } from '../../clan-match-detail/table/clan-match-detail.entity';
+import { NexonUserBattleLog } from '../../nexon-user-battle-log/table/nexon-user-battle-log.entitiy';
+import { NexonUserInfo } from '../../nexon-user-info/table/nexon-user-info.entitiy';
 @Table({
   tableName: 'Game',
   freezeTableName: true,
