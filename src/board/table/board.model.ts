@@ -18,6 +18,6 @@ export class Board extends Model {
   @Column
   title: string;
 
-  @Column(DataType.TEXT)
+  @Column
   discription: string;
 }

@@ -7,6 +7,7 @@ import {
   findManyclanNo,
 } from 'src/commons/dto/clan-info.dto/clan-info.dto';
 import { UpdatedAt } from 'sequelize-typescript';
+import { response } from 'express';
 
 @Injectable()
 export class ClanInfoRepository {
@@ -23,7 +24,6 @@ export class ClanInfoRepository {
         },
       });
 
-      console.log(isExistsClanInRank);
       if (isExistsClanInRank.length === clanNo.length)
         return isExistsClanInRank;
 
@@ -43,8 +43,7 @@ export class ClanInfoRepository {
   }
 
   async createClanInfo(matchDetail: CreateClanInfo[]) {
-    console.log(matchDetail);
-    matchDetail.forEach(async (matchData) => {
+    const createManyClanInfo = matchDetail.map((matchData) => {
       const {
         redResult,
         redClanName,
@@ -60,32 +59,46 @@ export class ClanInfoRepository {
 
       const numberOfRedNo = Number(redClanNo);
       const numberOfBlueNo = Number(blueClanNo);
-      if (redResult === 'win') {
-        const redWinInsertDB = await this.clanInfoEntitiy.bulkCreate([
-          {
-            clanNo: numberOfRedNo,
-            clanName: redClanName,
-            ladderPoint: 1000,
-            clanMark1: redClanMark1,
-            clanMark2: redClanMark2,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-            deletedAt: null,
-          },
-          {
-            clanNo: numberOfBlueNo,
-            clanName: blueClanName,
-            ladderPoint: 1000,
-            clanMark1: blueClanMark1,
-            clanMark2: blueClanMark2,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-            deletedAt: null,
-          },
-        ]);
 
-        return redWinInsertDB;
+      try {
+        if (redResult === 'win') {
+          const redClanInfoCreate = this.clanInfoEntitiy.bulkCreate([
+            {
+              clanNo: numberOfRedNo,
+              clanName: redClanName,
+              clanMark1: redClanMark1,
+              clanMark2: redClanMark2,
+              clanMatchDetail: [
+                {
+                  isRedTeam: true,
+                  result: true,
+                  targetTeamNo: blueClanNo,
+                },
+              ],
+            },
+            {
+              clanNo: numberOfBlueNo,
+              clanName: blueClanName,
+              clanMark1: blueClanMark1,
+              clanMark2: blueClanMark2,
+              clanMatchDetail: [
+                {
+                  isblueTeama: true,
+                  targetTeamNo: blueClanNo,
+                },
+              ],
+            },
+          ]);
+          console.log(redClanInfoCreate);
+          return redClanInfoCreate;
+        }
+      } catch (e) {
+        throw new HttpException(e.message, 500);
       }
     });
+
+    const response = await Promise.all(createManyClanInfo);
+
+    return response;
   }
 }

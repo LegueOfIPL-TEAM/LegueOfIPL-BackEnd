@@ -1,10 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { BOARD_REPOSITORY } from 'src/core/constants';
 import { Board } from 'src/board/table/board.model';
-export class createBoardDto {
-  title: string;
-  description: string;
-}
+import { createBoardDto } from 'src/commons/dto/board/postBoard.dto';
+
 @Injectable()
 export class BoardService {
   constructor(
@@ -13,15 +11,12 @@ export class BoardService {
   ) {}
 
   async postBoard(createBoard: createBoardDto) {
-    console.log(createBoard);
     const { title, description } = createBoard;
 
-    console.log(title, description);
     const posetBoard = await this.boardRepository.create<Board>({
       title,
       description,
     });
-    console.log(posetBoard);
 
     const response = {
       response: posetBoard,

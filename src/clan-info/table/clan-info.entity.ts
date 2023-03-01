@@ -2,10 +2,12 @@ import {
   AutoIncrement,
   BelongsTo,
   Column,
+  DataType,
   ForeignKey,
   HasMany,
   HasOne,
   Model,
+  NotNull,
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
@@ -14,9 +16,8 @@ import { NexonUserInfo } from '../../nexon-user-info/table/nexon-user-info.entit
 
 @Table({
   tableName: 'ClanInfo',
-  freezeTableName: true,
   timestamps: true,
-  paranoid: true,
+  paranoid: false,
 })
 export class ClanInfo extends Model {
   @PrimaryKey
@@ -24,7 +25,10 @@ export class ClanInfo extends Model {
   @Column
   id: number;
 
-  @Column
+  @Column({
+    type: DataType.BIGINT,
+    allowNull: false,
+  })
   clanNo: number;
 
   @Column

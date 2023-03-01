@@ -1,7 +1,15 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { title } from 'process';
 import { Board } from 'src/board/table/board.model';
-import { BoardService, createBoardDto } from './board.service';
+import { createBoardDto } from 'src/commons/dto/board/postBoard.dto';
+import { BoardService } from './board.service';
 
 @Controller('board')
 export class BoardController {

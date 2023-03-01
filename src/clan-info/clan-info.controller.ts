@@ -17,7 +17,7 @@ export class ClanInfoController {
     private clanInfoRepository: ClanInfoRepository,
   ) {}
 
-  @Post('/clan-in-rank')
+  @Post('/list')
   findExistsClanInRank(@Body() clanNo: number[]) {
     return this.clanInfoRepository.findExistsClanInRank([1234, 12345]);
   }
