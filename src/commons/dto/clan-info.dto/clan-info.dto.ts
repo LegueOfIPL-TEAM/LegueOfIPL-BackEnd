@@ -6,10 +6,8 @@ export class findManyclanNo {
 }
 
 export class CreateClanInfo {
-  redResult: string;
+  readonly redResult: string;
 
-  @IsNumber()
-  @Type(() => Number)
   readonly redClanNo: number;
 
   readonly redClanName: string;
@@ -18,10 +16,10 @@ export class CreateClanInfo {
 
   readonly redClanMark2: string;
 
+  readonly redUserList: nexonUserInfo[];
+
   readonly blueResult: string;
 
-  @IsNumber()
-  @Type(() => Number)
   readonly blueClanNo: number;
 
   readonly blueClanName: string;
@@ -29,4 +27,17 @@ export class CreateClanInfo {
   readonly blueClanMark1: string;
 
   readonly blueClanMark2: string;
+
+  readonly blueUserList: nexonUserInfo[];
+}
+
+export class nexonUserInfo {
+  nickname: string;
+  userNexonSn: string;
+  kill: number;
+  death: number;
+  assist: number;
+  damage: number;
+  grade: string;
+  weapon: string;
 }

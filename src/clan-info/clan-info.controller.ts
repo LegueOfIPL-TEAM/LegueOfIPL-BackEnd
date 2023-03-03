@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
   UsePipes,
   ValidationPipe,
@@ -17,13 +18,13 @@ export class ClanInfoController {
     private clanInfoRepository: ClanInfoRepository,
   ) {}
 
-  @Post('/list')
-  findExistsClanInRank(@Body() clanNo: number[]) {
-    return this.clanInfoRepository.findExistsClanInRank([1234, 12345]);
+  @Post()
+  createClanInfo(@Body() matchDetail: CreateClanInfo[]) {
+    return this.clanInfoService.createClanInfo(matchDetail);
   }
 
-  @Post()
-  async createClanInfo(@Body() createClanInfo: CreateClanInfo[]) {
-    return await this.clanInfoRepository.createClanInfo(createClanInfo);
+  @Get()
+  async test() {
+    return await this.clanInfoRepository.findAllClan();
   }
 }

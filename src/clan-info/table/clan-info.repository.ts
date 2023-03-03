@@ -1,13 +1,17 @@
-import { HttpException, Inject, Injectable } from '@nestjs/common';
+import {
+  ConsoleLogger,
+  HttpException,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { CLAN_INFO } from 'src/core/constants';
-import { AllOfDataAfterRefactoring } from 'src/commons/interface/crawling.interface';
 import { ClanInfo } from './clan-info.entity';
 import {
   CreateClanInfo,
   findManyclanNo,
 } from 'src/commons/dto/clan-info.dto/clan-info.dto';
-import { UpdatedAt } from 'sequelize-typescript';
-import { response } from 'express';
+import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
+import { InjectModel } from '@nestjs/sequelize';
 
 @Injectable()
 export class ClanInfoRepository {
@@ -16,82 +20,103 @@ export class ClanInfoRepository {
     private clanInfoEntitiy: typeof ClanInfo,
   ) {}
 
-  async findExistsClanInRank(clanNo: number[]) {
+  async SortByFanking() {
     try {
-      const isExistsClanInRank = await this.clanInfoEntitiy.findAll({
-        where: {
-          clanNo,
-        },
+      const ladderPoint = await this.clanInfoEntitiy.findAll({
+        order: [['ladderPoint', 'DESC']],
       });
 
-      if (isExistsClanInRank.length === clanNo.length)
-        return isExistsClanInRank;
-
-      const notExistsClanNo = isExistsClanInRank.map((source) => {
-        for (let i = 0; i < clanNo.length; i++) {
-          if (clanNo[i] === source.clanNo) {
-            clanNo.splice(i, 1);
-            i--;
-          }
-        }
-      });
-
-      return [...notExistsClanNo, ...isExistsClanInRank];
+      return ladderPoint;
     } catch (e) {
       throw new HttpException(e.message, 500);
     }
   }
 
-  async createClanInfo(matchDetail: CreateClanInfo[]) {
-    const createManyClanInfo = matchDetail.map((matchData) => {
+  async findClanNos(clanNo: Array<number>) {
+    try {
+      const findAllClanNos = await this.clanInfoEntitiy.findAll({
+        where: {
+          clanNo,
+        },
+      });
+
+      return findAllClanNos;
+    } catch (e) {
+      throw new HttpException(e.message, 500);
+    }
+  }
+
+  async findAllClan() {
+    try {
+      return this.clanInfoEntitiy.create(
+        {
+          clanNo: '123456',
+          clanName: 'test',
+          clanMark1: 'test1',
+          clanMark2: 'test2',
+          nexonUserInfo: {
+            userNexonSn: 1234,
+          },
+        },
+        {
+          include: [NexonUserInfo],
+        },
+      );
+    } catch (e) {
+      throw new HttpException(e.message, 500);
+    }
+  }
+
+  async createManyClanInfo(matchDetail: CreateClanInfo[]) {
+    const createManyClanInfo = matchDetail.map(async (matchData, index) => {
       const {
-        redResult,
         redClanName,
         redClanNo,
         redClanMark1,
         redClanMark2,
-        blueResult,
+        redUserList,
         blueClanName,
         blueClanNo,
         blueClanMark1,
         blueClanMark2,
+        blueUserList,
       } = matchData;
 
-      const numberOfRedNo = Number(redClanNo);
-      const numberOfBlueNo = Number(blueClanNo);
+      const blueUserNexonSn = blueUserList.map((user) => ({
+        userNexonSn: user.userNexonSn,
+      }));
 
+      const redUserNexonSn = redUserList.map((user) => ({
+        userNexonSn: user.userNexonSn,
+      }));
       try {
-        if (redResult === 'win') {
-          const redClanInfoCreate = this.clanInfoEntitiy.bulkCreate([
+        const createClanInfo = await this.clanInfoEntitiy.bulkCreate(
+          [
             {
-              clanNo: numberOfRedNo,
+              clanNo: redClanNo,
               clanName: redClanName,
               clanMark1: redClanMark1,
               clanMark2: redClanMark2,
-              clanMatchDetail: [
-                {
-                  isRedTeam: true,
-                  result: true,
-                  targetTeamNo: blueClanNo,
-                },
-              ],
+              nexonUserInfo: [...redUserNexonSn],
             },
             {
-              clanNo: numberOfBlueNo,
+              clanNo: blueClanNo,
               clanName: blueClanName,
               clanMark1: blueClanMark1,
               clanMark2: blueClanMark2,
-              clanMatchDetail: [
-                {
-                  isblueTeama: true,
-                  targetTeamNo: blueClanNo,
-                },
-              ],
+              nexonUserInfo: [...blueUserNexonSn],
             },
-          ]);
-          console.log(redClanInfoCreate);
-          return redClanInfoCreate;
-        }
+          ],
+          {
+            include: [
+              {
+                model: NexonUserInfo,
+                as: 'nexonUserInfo',
+              },
+            ],
+          },
+        );
+        return createClanInfo;
       } catch (e) {
         throw new HttpException(e.message, 500);
       }
@@ -99,6 +124,6 @@ export class ClanInfoRepository {
 
     const response = await Promise.all(createManyClanInfo);
 
-    return response;
+    return response.flat();
   }
 }

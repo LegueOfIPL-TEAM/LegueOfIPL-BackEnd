@@ -18,7 +18,7 @@ import { NexonUserBattleLog } from '../../nexon-user-battle-log/table/nexon-user
   timestamps: true,
   paranoid: true,
 })
-export class NexonUserInfo extends Model<ClanInfo, NexonUserBattleLog> {
+export class NexonUserInfo extends Model<ClanInfo> {
   @PrimaryKey
   @AutoIncrement
   @Column
@@ -30,14 +30,13 @@ export class NexonUserInfo extends Model<ClanInfo, NexonUserBattleLog> {
   @Column({ defaultValue: 1000 })
   ladderPoint: number;
 
+  @ForeignKey(() => ClanInfo)
+  clanInfoId: number;
+
   @BelongsTo(() => ClanInfo, {
-    as: 'UserInClan',
     foreignKey: 'clanInfoId',
   })
   clanInfo: ClanInfo;
-
-  @ForeignKey(() => ClanInfo)
-  clanInfoId: number;
 
   @HasMany(() => NexonUserBattleLog)
   userDetailInfo: NexonUserBattleLog[];
