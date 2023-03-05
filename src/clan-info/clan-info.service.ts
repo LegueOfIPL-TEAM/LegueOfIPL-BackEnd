@@ -1,6 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { match } from 'assert';
-import { CreateClanInfo } from 'src/commons/dto/clan-info.dto/clan-info.dto';
+import { MatchDetails } from 'src/commons/dto/clan-info.dto/clan-info.dto';
 import { NexonUserInfoRepository } from 'src/nexon-user-info/nexon-user-info.repository';
 import { ClanInfoRepository } from './table/clan-info.repository';
 
@@ -11,42 +11,99 @@ export class ClanInfoService {
     private readonly nexonUserRepository: NexonUserInfoRepository,
   ) {}
 
-  async createClanInfo(matchDetail: CreateClanInfo[]) {
-    const response = matchDetail.map(async (matchInfos) => {
-      const { redClanNo, blueClanNo, blueUserList, redUserList } = matchInfos;
-      const clanNoArray = [redClanNo, blueClanNo];
-      const match = [matchInfos];
-      const blueUserNexonSn = blueUserList.map((user) => user.userNexonSn);
-      const redUserNexonSn = redUserList.map((user) => user.userNexonSn);
-      const allUserNexonSn = [blueUserNexonSn, redUserNexonSn];
+  async createClanInfo(matchDetails: MatchDetails[]) {
+    const allClanNos = matchDetails.flatMap((matchData) => [
+      matchData.redClanNo,
+      matchData.blueClanNo,
+    ]);
 
-      console.log(clanNoArray);
-      console.log(allUserNexonSn);
-      try {
-        const findAllClanInfoByNos = await this.clanInfoRepository.findClanNos(
-          clanNoArray,
+    const allUserNexonSns = matchDetails
+      .flatMap((matchData) => [
+        matchData.redUserList.map((user) => user.userNexonSn),
+        matchData.blueUserList.map((user) => user.userNexonSn),
+      ])
+      .flat();
+
+    try {
+      const existsClan = await this.clanInfoRepository.findClanNos(allClanNos);
+
+      const existsClanNos = existsClan.map((user) => user.clanNo);
+
+      const isExistsNexonUser =
+        await this.nexonUserRepository.findNexonUserInfos(allUserNexonSns);
+
+      if (existsClan.length === 0 && isExistsNexonUser.length === 0) {
+        //   주어진 데이터 속 어떠한 정보도 db에 존재하지 않는 경우
+        const createAllData =
+          await this.clanInfoRepository.createManyClanInfoWithNexonUserInfo(
+            matchDetails,
+          );
+
+        return createAllData;
+      } else if (existsClan.length !== allClanNos.length) {
+        //   주어진 데이터 속 clan 정보만이 db에 존재하지 않는 경우
+        const createMissingClanInfo = await this.createMissingClanInfo(
+          matchDetails,
+          existsClanNos,
         );
 
-        // const isExistsNexonUser =
-        //   await this.nexonUserRepository.findNexonUserInfos(allUserNexonSn);
-
-        if (findAllClanInfoByNos.length === clanNoArray.length)
-          return findAllClanInfoByNos.flat();
-
-        const createClanInfos =
-          await this.clanInfoRepository.createManyClanInfo(match);
-
-        return createClanInfos;
-      } catch (e) {
-        throw new HttpException(e.message, 500);
+        return createMissingClanInfo;
       }
-    });
-
-    const results = await Promise.all(response);
-    return results;
+    } catch (e) {
+      throw new HttpException(e.message, 409);
+    }
   }
 
-  async updateClanLadder(clanMatchDetail: CreateClanInfo[]) {
+  async createMissingClanInfo(
+    matchDetails: MatchDetails[],
+    existsClanNos: Array<string>,
+  ) {
+    const missingRedClan = matchDetails.reduce((acc, match) => {
+      if (!existsClanNos.includes(match.redClanNo)) {
+        acc.push(match.redClanNo);
+      }
+      return acc;
+    }, []);
+
+    const missingBlueClan = matchDetails.reduce((acc, match) => {
+      if (!existsClanNos.includes(match.blueClanNo)) {
+        acc.push(match.blueClanNo);
+      }
+      return acc;
+    }, []);
+
+    try {
+      if (missingBlueClan.length > 0) {
+        const missingBlueClandata = matchDetails.filter((match) => {
+          return missingBlueClan.includes(match.blueClanNo);
+        });
+
+        const insertOnlyMissingBlueClan =
+          await this.clanInfoRepository.createOnlyBlueClanInfo(
+            missingBlueClandata,
+          );
+
+        return insertOnlyMissingBlueClan;
+      }
+
+      if (missingRedClan.length > 0) {
+        const missingRedClandata = matchDetails.filter((match) => {
+          return missingRedClan.includes(match.redClanNo);
+        });
+
+        const insertOnlyMissingRedClan =
+          await this.clanInfoRepository.createOnlyRedClanInfo(
+            missingRedClandata,
+          );
+
+        return insertOnlyMissingRedClan;
+      }
+    } catch (e) {
+      throw new HttpException(e.message, 409);
+    }
+  }
+
+  async updateClanLadder(clanMatchDetail: MatchDetails[]) {
     const response = clanMatchDetail.map(() => {});
   }
 }

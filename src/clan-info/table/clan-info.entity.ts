@@ -26,10 +26,10 @@ export class ClanInfo extends Model {
   id: number;
 
   @Column({
-    type: DataType.BIGINT,
+    type: DataType.TEXT,
     allowNull: false,
   })
-  clanNo: number;
+  clanNo: string;
 
   @Column
   clanName: string;

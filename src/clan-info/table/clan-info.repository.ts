@@ -7,7 +7,7 @@ import {
 import { CLAN_INFO } from 'src/core/constants';
 import { ClanInfo } from './clan-info.entity';
 import {
-  CreateClanInfo,
+  MatchDetails,
   findManyclanNo,
 } from 'src/commons/dto/clan-info.dto/clan-info.dto';
 import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
@@ -20,55 +20,18 @@ export class ClanInfoRepository {
     private clanInfoEntitiy: typeof ClanInfo,
   ) {}
 
-  async SortByFanking() {
-    try {
-      const ladderPoint = await this.clanInfoEntitiy.findAll({
-        order: [['ladderPoint', 'DESC']],
-      });
+  async findClanNos(clanNo: Array<string>) {
+    const findAllClanNos = await this.clanInfoEntitiy.findAll({
+      where: {
+        clanNo,
+      },
+    });
 
-      return ladderPoint;
-    } catch (e) {
-      throw new HttpException(e.message, 500);
-    }
+    return findAllClanNos;
   }
 
-  async findClanNos(clanNo: Array<number>) {
-    try {
-      const findAllClanNos = await this.clanInfoEntitiy.findAll({
-        where: {
-          clanNo,
-        },
-      });
-
-      return findAllClanNos;
-    } catch (e) {
-      throw new HttpException(e.message, 500);
-    }
-  }
-
-  async findAllClan() {
-    try {
-      return this.clanInfoEntitiy.create(
-        {
-          clanNo: '123456',
-          clanName: 'test',
-          clanMark1: 'test1',
-          clanMark2: 'test2',
-          nexonUserInfo: {
-            userNexonSn: 1234,
-          },
-        },
-        {
-          include: [NexonUserInfo],
-        },
-      );
-    } catch (e) {
-      throw new HttpException(e.message, 500);
-    }
-  }
-
-  async createManyClanInfo(matchDetail: CreateClanInfo[]) {
-    const createManyClanInfo = matchDetail.map(async (matchData, index) => {
+  async createManyClanInfoWithNexonUserInfo(matchDetails: MatchDetails[]) {
+    const createManyClanInfo = matchDetails.map(async (matchData) => {
       const {
         redClanName,
         redClanNo,
@@ -89,8 +52,9 @@ export class ClanInfoRepository {
       const redUserNexonSn = redUserList.map((user) => ({
         userNexonSn: user.userNexonSn,
       }));
-      try {
-        const createClanInfo = await this.clanInfoEntitiy.bulkCreate(
+
+      const isertClanInfoWithNexonUserInfo =
+        await this.clanInfoEntitiy.bulkCreate(
           [
             {
               clanNo: redClanNo,
@@ -116,14 +80,52 @@ export class ClanInfoRepository {
             ],
           },
         );
-        return createClanInfo;
-      } catch (e) {
-        throw new HttpException(e.message, 500);
-      }
+      return isertClanInfoWithNexonUserInfo;
     });
 
     const response = await Promise.all(createManyClanInfo);
 
     return response.flat();
+  }
+
+  async createOnlyBlueClanInfo(matchDetails: MatchDetails[]) {
+    const createManyClanInfo = matchDetails.map(async (matchData) => {
+      const { blueClanName, blueClanNo, blueClanMark1, blueClanMark2 } =
+        matchData;
+
+      const isertClanInfo = await this.clanInfoEntitiy.bulkCreate([
+        {
+          clanNo: blueClanNo,
+          clanName: blueClanName,
+          clanMark1: blueClanMark1,
+          clanMark2: blueClanMark2,
+        },
+      ]);
+      return isertClanInfo;
+    });
+    const blueClanInfoList = await Promise.all(createManyClanInfo);
+    const flattenedList = blueClanInfoList.flat();
+
+    return flattenedList;
+  }
+
+  async createOnlyRedClanInfo(matchDetails: MatchDetails[]) {
+    const createManyClanInfo = matchDetails.map(async (matchData) => {
+      const { redClanNo, redClanName, redClanMark1, redClanMark2 } = matchData;
+
+      const isertClanInfo = await this.clanInfoEntitiy.bulkCreate([
+        {
+          clanNo: redClanNo,
+          clanName: redClanName,
+          clanMark1: redClanMark1,
+          clanMark2: redClanMark2,
+        },
+      ]);
+      return isertClanInfo;
+    });
+    const redClanInfoList = await Promise.all(createManyClanInfo);
+    const flattenedList = redClanInfoList.flat();
+
+    return flattenedList;
   }
 }

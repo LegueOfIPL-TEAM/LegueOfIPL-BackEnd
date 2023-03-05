@@ -6,16 +6,16 @@ import { NexonUserInfo } from './table/nexon-user-info.entitiy';
 export class NexonUserInfoRepository {
   constructor(
     @Inject(NEXON_USER_INFO)
-    private nexonUserMode: typeof NexonUserInfo,
+    private nexonUserInfoModel: typeof NexonUserInfo,
   ) {}
 
-  findNexonUserInfos(nexonSn: Array<string>) {
-    const isExistsUser = this.nexonUserMode.findAll({
+  async findNexonUserInfos(allUserNexonSn: Array<string>) {
+    const allUserNexon = await this.nexonUserInfoModel.findAll({
       where: {
-        nexonUserInfo: nexonSn,
+        userNexonSn: allUserNexonSn,
       },
     });
 
-    return isExistsUser;
+    return allUserNexon;
   }
 }

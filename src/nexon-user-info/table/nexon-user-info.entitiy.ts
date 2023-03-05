@@ -18,7 +18,7 @@ import { NexonUserBattleLog } from '../../nexon-user-battle-log/table/nexon-user
   timestamps: true,
   paranoid: true,
 })
-export class NexonUserInfo extends Model<ClanInfo> {
+export class NexonUserInfo extends Model<NexonUserInfo> {
   @PrimaryKey
   @AutoIncrement
   @Column

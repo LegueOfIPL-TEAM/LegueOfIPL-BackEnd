@@ -62,7 +62,7 @@ export const databaseProviders = [
       } catch (err) {
         Logger.error('Unable to connect to the database:', err);
       }
-      await sequelize.sync({ force: true });
+      await sequelize.sync({ force: false });
       return sequelize;
     },
   },

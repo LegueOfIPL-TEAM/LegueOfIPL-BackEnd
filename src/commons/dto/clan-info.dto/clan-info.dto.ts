@@ -5,10 +5,10 @@ export class findManyclanNo {
   clanNo: string[];
 }
 
-export class CreateClanInfo {
+export class MatchDetails {
   readonly redResult: string;
 
-  readonly redClanNo: number;
+  readonly redClanNo: string;
 
   readonly redClanName: string;
 
@@ -16,11 +16,11 @@ export class CreateClanInfo {
 
   readonly redClanMark2: string;
 
-  readonly redUserList: nexonUserInfo[];
+  readonly redUserList: NexonUserInfo[];
 
   readonly blueResult: string;
 
-  readonly blueClanNo: number;
+  readonly blueClanNo: string;
 
   readonly blueClanName: string;
 
@@ -28,10 +28,10 @@ export class CreateClanInfo {
 
   readonly blueClanMark2: string;
 
-  readonly blueUserList: nexonUserInfo[];
+  readonly blueUserList: NexonUserInfo[];
 }
 
-export class nexonUserInfo {
+export class NexonUserInfo {
   nickname: string;
   userNexonSn: string;
   kill: number;
