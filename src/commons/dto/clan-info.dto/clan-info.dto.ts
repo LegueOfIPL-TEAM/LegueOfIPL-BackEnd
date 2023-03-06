@@ -33,7 +33,7 @@ export class MatchDetails {
 
 export class NexonUserInfo {
   nickname: string;
-  userNexonSn: string;
+  userNexonSn: number;
   kill: number;
   death: number;
   assist: number;

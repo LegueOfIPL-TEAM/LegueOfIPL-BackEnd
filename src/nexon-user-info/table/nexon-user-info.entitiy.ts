@@ -3,6 +3,7 @@ import {
   AutoIncrement,
   BelongsTo,
   Column,
+  DataType,
   ForeignKey,
   HasMany,
   Model,
@@ -24,19 +25,13 @@ export class NexonUserInfo extends Model<NexonUserInfo> {
   @Column
   id: number;
 
-  @Column
+  @Column({
+    type: DataType.INTEGER,
+  })
   userNexonSn: number;
 
   @Column({ defaultValue: 1000 })
   ladderPoint: number;
-
-  @ForeignKey(() => ClanInfo)
-  clanInfoId: number;
-
-  @BelongsTo(() => ClanInfo, {
-    foreignKey: 'clanInfoId',
-  })
-  clanInfo: ClanInfo;
 
   @HasMany(() => NexonUserBattleLog)
   userDetailInfo: NexonUserBattleLog[];

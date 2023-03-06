@@ -37,49 +37,27 @@ export class ClanInfoRepository {
         redClanNo,
         redClanMark1,
         redClanMark2,
-        redUserList,
         blueClanName,
         blueClanNo,
         blueClanMark1,
         blueClanMark2,
-        blueUserList,
       } = matchData;
 
-      const blueUserNexonSn = blueUserList.map((user) => ({
-        userNexonSn: user.userNexonSn,
-      }));
-
-      const redUserNexonSn = redUserList.map((user) => ({
-        userNexonSn: user.userNexonSn,
-      }));
-
       const isertClanInfoWithNexonUserInfo =
-        await this.clanInfoEntitiy.bulkCreate(
-          [
-            {
-              clanNo: redClanNo,
-              clanName: redClanName,
-              clanMark1: redClanMark1,
-              clanMark2: redClanMark2,
-              nexonUserInfo: [...redUserNexonSn],
-            },
-            {
-              clanNo: blueClanNo,
-              clanName: blueClanName,
-              clanMark1: blueClanMark1,
-              clanMark2: blueClanMark2,
-              nexonUserInfo: [...blueUserNexonSn],
-            },
-          ],
+        await this.clanInfoEntitiy.bulkCreate([
           {
-            include: [
-              {
-                model: NexonUserInfo,
-                as: 'nexonUserInfo',
-              },
-            ],
+            clanNo: redClanNo,
+            clanName: redClanName,
+            clanMark1: redClanMark1,
+            clanMark2: redClanMark2,
           },
-        );
+          {
+            clanNo: blueClanNo,
+            clanName: blueClanName,
+            clanMark1: blueClanMark1,
+            clanMark2: blueClanMark2,
+          },
+        ]);
       return isertClanInfoWithNexonUserInfo;
     });
 

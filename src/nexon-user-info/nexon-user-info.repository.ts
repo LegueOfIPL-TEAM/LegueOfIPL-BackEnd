@@ -9,7 +9,7 @@ export class NexonUserInfoRepository {
     private nexonUserInfoModel: typeof NexonUserInfo,
   ) {}
 
-  async findNexonUserInfos(allUserNexonSn: Array<string>) {
+  async findNexonUserInfos(allUserNexonSn: Array<number>) {
     const allUserNexon = await this.nexonUserInfoModel.findAll({
       where: {
         userNexonSn: allUserNexonSn,
@@ -17,5 +17,20 @@ export class NexonUserInfoRepository {
     });
 
     return allUserNexon;
+  }
+
+  async createAllNexonUser(userInfos: Array<number>) {
+    const insertUserInfoInDB = userInfos.map(async (user) => {
+      const createUsers = await this.nexonUserInfoModel.bulkCreate([
+        {
+          userNexonSn: user,
+        },
+      ]);
+
+      return createUsers;
+    });
+
+    const response = Promise.all(insertUserInfoInDB);
+    return response;
   }
 }

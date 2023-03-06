@@ -29,10 +29,7 @@ export class ClanInfoService {
 
       const existsClanNos = existsClan.map((user) => user.clanNo);
 
-      const isExistsNexonUser =
-        await this.nexonUserRepository.findNexonUserInfos(allUserNexonSns);
-
-      if (existsClan.length === 0 && isExistsNexonUser.length === 0) {
+      if (existsClan.length === 0) {
         //   주어진 데이터 속 어떠한 정보도 db에 존재하지 않는 경우
         const createAllData =
           await this.clanInfoRepository.createManyClanInfoWithNexonUserInfo(
@@ -41,7 +38,7 @@ export class ClanInfoService {
 
         return createAllData;
       } else if (existsClan.length !== allClanNos.length) {
-        //   주어진 데이터 속 clan 정보만이 db에 존재하지 않는 경우
+        //   주어진 데이터 속 특정 clan이 db에 존재하지 않는 경우
         const createMissingClanInfo = await this.createMissingClanInfo(
           matchDetails,
           existsClanNos,

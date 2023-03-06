@@ -48,10 +48,6 @@ export class ClanInfo extends Model {
   @Column
   clanMark2: string;
 
-  //nexonUserInfo
-  @HasMany(() => NexonUserInfo)
-  nexonUserInfo: NexonUserInfo[];
-
   // clanMatchDetail
   @HasMany(() => ClanMatchDetail)
   clanMatchDetail: ClanMatchDetail[];
