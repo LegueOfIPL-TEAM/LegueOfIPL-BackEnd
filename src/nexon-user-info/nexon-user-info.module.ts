@@ -12,6 +12,6 @@ import { nexonUserInfoproviders } from './table/nexon-user-info.provider';
     ...nexonUserInfoproviders,
     NexonUserInfoRepository,
   ],
-  exports: [NexonUserInfoRepository],
+  exports: [NexonUserInfoRepository, NexonUserInfoService],
 })
 export class NexonUserInfoModule {}

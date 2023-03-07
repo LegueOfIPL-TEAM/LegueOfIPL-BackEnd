@@ -12,6 +12,7 @@ import { NexonUserInfo } from '../nexon-user-info/table/nexon-user-info.entitiy'
 import { NexonUserBattleLog } from '../nexon-user-battle-log/table/nexon-user-battle-log.entitiy';
 import { ClanMatchDetail } from '../clan-match-detail/table/clan-match-detail.entity';
 import { AllOfDataAfterRefactoring } from 'src/commons/interface/crawling.interface';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class GameRepository {
@@ -19,42 +20,36 @@ export class GameRepository {
     @Inject(GAME_ENTITY)
     private gameEntity: typeof Game, // @Inject(NEXON_USER_INFO)
   ) {}
+  async insertMatchData(matchData: AllOfDataAfterRefactoring[]) {
+    const createMatchDatas = matchData.map(async (matchDetails) => {
+      const { matchKey, matchTime, mapName, matchName, plimit } = matchDetails;
 
-  // async refactoringDataPushInDb(refactoringData: AllOfDataAfterRefactoring[]) {
-  //   refactoringData.forEach((matchData) => {
-  //     const {
-  //       matchKey,
-  //       matchTime,
-  //       mapName,
-  //       plimit,
-  //       redResult,
-  //       redClanNo,
-  //       redClanName,
-  //       redClanMark1,
-  //       redClanMark2,
-  //       redUserList,
-  //       blueResult,
-  //       blueClanNo,
-  //       blueClanName,
-  //       blueClanMark1,
-  //       blueClanMark2,
-  //       blueUserList,
-  //     } = matchData;
+      const convertedTime = dayjs(matchTime, 'YYYY.MM.DD (HH:mm)').format(
+        'YYYY-MM-DD HH:mm',
+      );
 
-  //     try {
-  //       if (redResult === 'win') {
-  //         const isExistsInRankClan = this.gameEntity.findAll({
-  //           where: {
+      const insertDb = await this.gameEntity.bulkCreate([
+        {
+          matchKey,
+          matchTime,
+          mapName,
+          plimit,
+        },
+      ]);
 
-  //           }
-  //         })
+      return insertDb;
+    });
 
-  //       }
-  //       // if blue team win db insert
+    return createMatchDatas;
+  }
 
-  //     } catch (e) {
-  //       throw new HttpException(500, 'db insert error');
-  //     }
-  //   });
-  // }
+  async findAllMatchKey(matchKey: Array<string>) {
+    const findAllMatchKeysInGame = await this.gameEntity.findAll({
+      where: {
+        matchKey: matchKey,
+      },
+    });
+
+    return findAllMatchKeysInGame;
+  }
 }

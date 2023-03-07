@@ -33,7 +33,8 @@ export class NexonUserInfoService {
         });
 
         return insertMissingUser;
-      }
+      } else if (findUserInDB.length === allUserNexonSns.length)
+        return findUserInDB;
     } catch (e) {
       throw new HttpException(e.message, 500);
     }

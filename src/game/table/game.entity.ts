@@ -31,7 +31,7 @@ export class Game extends Model {
   id: number;
 
   @Column
-  matchKey: number;
+  matchKey: string;
 
   @Column({
     type: DataType.DATE,

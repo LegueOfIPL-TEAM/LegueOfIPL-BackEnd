@@ -52,7 +52,10 @@ export class ClanMatchDetail extends Model<Game, ClanInfo> {
   ClanInfo: ClanInfo;
 
   @ForeignKey(() => ClanInfo)
-  targetTeamNo: number;
+  clanId: string;
+
+  @ForeignKey(() => ClanInfo)
+  targetTeamId: string;
 
   //belongs to game
   @BelongsTo(() => Game, {

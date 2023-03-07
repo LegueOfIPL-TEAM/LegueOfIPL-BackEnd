@@ -10,5 +10,6 @@ import { ClanInfoRepository } from './table/clan-info.repository';
   imports: [NexonUserInfoModule],
   controllers: [ClanInfoController],
   providers: [ClanInfoService, ...clanInfoProvider, ClanInfoRepository],
+  exports: [ClanInfoService],
 })
 export class ClanInfoModule {}

@@ -17,13 +17,6 @@ export class ClanInfoService {
       matchData.blueClanNo,
     ]);
 
-    const allUserNexonSns = matchDetails
-      .flatMap((matchData) => [
-        matchData.redUserList.map((user) => user.userNexonSn),
-        matchData.blueUserList.map((user) => user.userNexonSn),
-      ])
-      .flat();
-
     try {
       const existsClan = await this.clanInfoRepository.findClanNos(allClanNos);
 
@@ -45,7 +38,7 @@ export class ClanInfoService {
         );
 
         return createMissingClanInfo;
-      }
+      } else if (existsClan.length === allClanNos.length) return existsClan;
     } catch (e) {
       throw new HttpException(e.message, 409);
     }
