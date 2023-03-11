@@ -13,6 +13,7 @@ import { NexonUserBattleLog } from '../nexon-user-battle-log/table/nexon-user-ba
 import { ClanMatchDetail } from '../clan-match-detail/table/clan-match-detail.entity';
 import { AllOfDataAfterRefactoring } from 'src/commons/interface/crawling.interface';
 import * as dayjs from 'dayjs';
+import { GameDetails } from 'src/commons/dto/game.dto/game.dto';
 
 @Injectable()
 export class GameRepository {
@@ -20,27 +21,24 @@ export class GameRepository {
     @Inject(GAME_ENTITY)
     private gameEntity: typeof Game, // @Inject(NEXON_USER_INFO)
   ) {}
-  async insertMatchData(matchData: AllOfDataAfterRefactoring[]) {
-    const createMatchDatas = matchData.map(async (matchDetails) => {
-      const { matchKey, matchTime, mapName, matchName, plimit } = matchDetails;
+  async insertMatchData(gameInfo: GameDetails[]) {
+    const insertGameInfoResponse = gameInfo.map(
+      async ({ matchKey, mapName, matchTime, plimit }) => {
+        return await this.gameEntity.bulkCreate([
+          {
+            matchKey,
+            mapName,
+            matchTime,
+            plimit,
+          },
+        ]);
+      },
+    );
 
-      const convertedTime = dayjs(matchTime, 'YYYY.MM.DD (HH:mm)').format(
-        'YYYY-MM-DD HH:mm',
-      );
+    const response = await Promise.all(insertGameInfoResponse);
+    const flatResponse = response.flat();
 
-      const insertDb = await this.gameEntity.bulkCreate([
-        {
-          matchKey,
-          matchTime,
-          mapName,
-          plimit,
-        },
-      ]);
-
-      return insertDb;
-    });
-
-    return createMatchDatas;
+    return flatResponse;
   }
 
   async findAllMatchKey(matchKey: Array<string>) {

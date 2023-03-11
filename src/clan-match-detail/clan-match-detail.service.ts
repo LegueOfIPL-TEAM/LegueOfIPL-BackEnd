@@ -5,8 +5,5 @@ import { ClanMatchDetailRepository } from './clan-match-detail.repository';
 
 @Injectable()
 export class ClanMatchDetailService {
-  constructor(
-    private clanMatchDetailRepository: ClanMatchDetailRepository,
-    private nexonUserInfoRepository: NexonUserInfoRepository,
-  ) {}
+  constructor(private clanMatchDetailRepository: ClanMatchDetailRepository) {}
 }

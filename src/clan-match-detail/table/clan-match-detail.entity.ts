@@ -20,7 +20,7 @@ import { NexonUserInfo } from '../../nexon-user-info/table/nexon-user-info.entit
   timestamps: true,
   paranoid: true,
 })
-export class ClanMatchDetail extends Model<Game, ClanInfo> {
+export class ClanMatchDetail extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column
@@ -45,23 +45,14 @@ export class ClanMatchDetail extends Model<Game, ClanInfo> {
   result: boolean;
 
   //belongs to clanInfo
-  @BelongsTo(() => ClanInfo, {
-    as: 'TeamNo',
-    foreignKey: 'teamNo',
-  })
+  @BelongsTo(() => ClanInfo)
   ClanInfo: ClanInfo;
 
   @ForeignKey(() => ClanInfo)
   clanId: string;
 
-  @ForeignKey(() => ClanInfo)
-  targetTeamId: string;
-
   //belongs to game
-  @BelongsTo(() => Game, {
-    as: 'gameNo',
-    foreignKey: 'gameId',
-  })
+  @BelongsTo(() => Game)
   game: Game;
 
   @ForeignKey(() => Game)

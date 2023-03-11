@@ -12,10 +12,8 @@ export class NexonUserBattleLogService {
   async refactoringDataWithUserId({
     userNexonSns,
     nexonUsers,
+    existsNexonUser,
   }: MatchDetailsRefactToUserId) {
-    const findNexonUsersIds =
-      await this.nexonUserInfoRepository.findNexonUserInfos(userNexonSns);
-
     const matchLogWithWithUserId = nexonUsers.map((user) => {
       const {
         userNexonSn,
@@ -28,12 +26,12 @@ export class NexonUserBattleLogService {
         weapon,
       } = user;
 
-      const matchingUser = findNexonUsersIds.find(
+      return user;
+      const matchingUser = existsNexonUser.find(
         (dataInDb) => dataInDb.userNexonSn === userNexonSn,
       );
 
       const response = {
-        clanId: matchingUser.id,
         nickName: nickname,
         kill: kill,
         death: death,
@@ -41,6 +39,7 @@ export class NexonUserBattleLogService {
         damage: damage,
         grade: grade,
         weapon: weapon,
+        nexonUserId: matchingUser.id,
       };
 
       return response;

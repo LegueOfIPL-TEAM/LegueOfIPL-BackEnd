@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { SequelizeModule } from '@nestjs/sequelize';
+import { databaseProviders } from 'src/core/database/db.provider';
 import { NexonUserInfoModule } from 'src/nexon-user-info/nexon-user-info.module';
 import { NexonUserInfoRepository } from 'src/nexon-user-info/nexon-user-info.repository';
 import { ClanInfoController } from './clan-info.controller';
@@ -9,7 +11,12 @@ import { ClanInfoRepository } from './table/clan-info.repository';
 @Module({
   imports: [NexonUserInfoModule],
   controllers: [ClanInfoController],
-  providers: [ClanInfoService, ...clanInfoProvider, ClanInfoRepository],
-  exports: [ClanInfoService],
+  providers: [
+    ClanInfoService,
+    ...clanInfoProvider,
+    ...databaseProviders,
+    ClanInfoRepository,
+  ],
+  exports: [ClanInfoService, ClanInfoRepository],
 })
 export class ClanInfoModule {}

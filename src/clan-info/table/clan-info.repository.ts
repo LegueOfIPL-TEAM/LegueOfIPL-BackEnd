@@ -3,19 +3,25 @@ import {
   HttpException,
   Inject,
   Injectable,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CLAN_INFO } from 'src/core/constants';
 import { ClanInfo } from './clan-info.entity';
 import {
   MatchDetails,
   findManyclanNo,
+  NexonClanInfoDetails,
 } from 'src/commons/dto/clan-info.dto/clan-info.dto';
 import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
-import { InjectModel } from '@nestjs/sequelize';
+import { InjectConnection, InjectModel } from '@nestjs/sequelize';
+import { MatchClanInfoDetails } from 'src/commons/dto/game.dto/game.dto';
+import { Sequelize } from 'sequelize';
 
 @Injectable()
 export class ClanInfoRepository {
   constructor(
+    @Inject('SEQUELIZE')
+    private sequelize: Sequelize,
     @Inject(CLAN_INFO)
     private clanInfoEntitiy: typeof ClanInfo,
   ) {}
@@ -105,5 +111,30 @@ export class ClanInfoRepository {
     const flattenedList = redClanInfoList.flat();
 
     return flattenedList;
+  }
+
+  async createClanInfoNoneDuplicate(
+    matchClanDetails: ClanInfo[],
+  ): Promise<ClanInfo[]> {
+    const response = matchClanDetails.map(
+      async ({ clanNo, clanName, clanMark1, clanMark2 }) => {
+        const createAllDataNotDuplicate = await this.clanInfoEntitiy.bulkCreate(
+          [
+            {
+              clanNo,
+              clanName,
+              clanMark1,
+              clanMark2,
+            },
+          ],
+        );
+
+        return createAllDataNotDuplicate;
+      },
+    );
+
+    const waitArray = await Promise.all(response);
+    const flatResponse = waitArray.flat();
+    return flatResponse;
   }
 }

@@ -92,8 +92,4 @@ export class ClanInfoService {
       throw new HttpException(e.message, 409);
     }
   }
-
-  async updateClanLadder(clanMatchDetail: MatchDetails[]) {
-    const response = clanMatchDetail.map(() => {});
-  }
 }

@@ -16,7 +16,7 @@ export class MatchDetails {
 
   readonly redClanMark2: string;
 
-  readonly redUserList: NexonUserInfo[];
+  readonly redUserList: NexonUserDetails[];
 
   readonly blueResult: string;
 
@@ -28,10 +28,10 @@ export class MatchDetails {
 
   readonly blueClanMark2: string;
 
-  readonly blueUserList: NexonUserInfo[];
+  readonly blueUserList: NexonUserDetails[];
 }
 
-export class NexonUserInfo {
+export class NexonUserDetails {
   nickname: string;
   userNexonSn: number;
   kill: number;
@@ -40,4 +40,11 @@ export class NexonUserInfo {
   damage: number;
   grade: string;
   weapon: string;
+}
+
+export class NexonClanInfoDetails {
+  clanName: string;
+  clanNo: string;
+  clanMark1: string;
+  clanMark2: string;
 }

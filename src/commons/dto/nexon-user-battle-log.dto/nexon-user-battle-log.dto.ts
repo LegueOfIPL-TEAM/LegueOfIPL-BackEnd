@@ -1,8 +1,23 @@
-import { NexonUserInfo } from '../clan-info.dto/clan-info.dto';
+import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
+import { NexonUserDetails } from '../clan-info.dto/clan-info.dto';
 
 export class MatchDetailsRefactToUserId {
   userNexonSns: Array<number>;
-  nexonUsers: NexonUserInfo[];
+  nexonUsers: NexonUserDetails[];
+  existsNexonUser: NexonUserInfo[];
 }
 
-export class MatchDetailsWithClanId {}
+export class NexonUserInfoInDB {
+  id: number;
+  nickname: string;
+  userNexonSn: number;
+  kill: number;
+  death: number;
+  assist: number;
+  damage: number;
+  grade: string;
+  weapon: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
+}

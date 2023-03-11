@@ -9,16 +9,17 @@ import {
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
+import { ClanInfo } from 'src/clan-info/table/clan-info.entity';
 import { Game } from '../../game/table/game.entity';
 import { NexonUserInfo } from '../../nexon-user-info/table/nexon-user-info.entitiy';
 
 @Table({
   tableName: 'NexonUserBattleLog',
-  freezeTableName: true, //테이블에 s 붙이지 않는 옵션
+  freezeTableName: true,
   timestamps: true,
   paranoid: true,
 })
-export class NexonUserBattleLog extends Model<Game, NexonUserInfo> {
+export class NexonUserBattleLog extends Model<ClanInfo, Game> {
   @PrimaryKey
   @AutoIncrement
   @Column
@@ -42,25 +43,18 @@ export class NexonUserBattleLog extends Model<Game, NexonUserInfo> {
   @Column
   grade: string;
 
-  @AllowNull
   @Column
   weapon: string;
 
-  @BelongsTo(() => Game, {
-    as: 'MatchOfPlayerDetails',
-    foreignKey: 'gameId',
-  })
+  @BelongsTo(() => Game)
   game: Game;
 
   @ForeignKey(() => Game)
   gameId: number;
 
-  @BelongsTo(() => NexonUserInfo, {
-    as: 'KADofPlayers',
-    foreignKey: 'nexonUserId',
-  })
+  @BelongsTo(() => NexonUserInfo)
   nexonUserInfo: NexonUserInfo;
 
   @ForeignKey(() => NexonUserInfo)
-  nexonUserId: NexonUserInfo;
+  nexonUserId: number;
 }
