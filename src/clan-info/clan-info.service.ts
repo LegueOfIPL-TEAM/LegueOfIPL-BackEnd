@@ -2,7 +2,7 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { match } from 'assert';
 import { MatchDetails } from 'src/commons/dto/clan-info.dto/clan-info.dto';
 import { NexonUserInfoRepository } from 'src/nexon-user-info/nexon-user-info.repository';
-import { ClanInfoRepository } from './table/clan-info.repository';
+import { ClanInfoRepository } from './clan-info.repository';
 
 @Injectable()
 export class ClanInfoService {

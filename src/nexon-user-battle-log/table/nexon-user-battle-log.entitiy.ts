@@ -19,7 +19,7 @@ import { NexonUserInfo } from '../../nexon-user-info/table/nexon-user-info.entit
   timestamps: true,
   paranoid: true,
 })
-export class NexonUserBattleLog extends Model<ClanInfo, Game> {
+export class NexonUserBattleLog extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column
@@ -32,7 +32,7 @@ export class NexonUserBattleLog extends Model<ClanInfo, Game> {
   kill: number;
 
   @Column
-  detah: number;
+  death: number;
 
   @Column
   assist: number;
@@ -40,10 +40,14 @@ export class NexonUserBattleLog extends Model<ClanInfo, Game> {
   @Column
   damage: number;
 
-  @Column
+  @Column({
+    allowNull: true,
+  })
   grade: string;
 
-  @Column
+  @Column({
+    allowNull: true,
+  })
   weapon: string;
 
   @BelongsTo(() => Game)

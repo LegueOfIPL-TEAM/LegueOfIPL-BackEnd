@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
 import { NexonUserDetails } from '../clan-info.dto/clan-info.dto';
 
@@ -7,17 +8,14 @@ export class MatchDetailsRefactToUserId {
   existsNexonUser: NexonUserInfo[];
 }
 
-export class NexonUserInfoInDB {
-  id: number;
+export class NexonUserBattleLogsInfo {
   nickname: string;
-  userNexonSn: number;
   kill: number;
   death: number;
   assist: number;
-  damage: number;
+  damage: string;
   grade: string;
   weapon: string;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date;
+  gameId: number;
+  nexonUserId: number;
 }

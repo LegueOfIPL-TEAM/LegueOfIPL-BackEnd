@@ -6,7 +6,7 @@ import { NexonUserInfoRepository } from 'src/nexon-user-info/nexon-user-info.rep
 import { ClanInfoController } from './clan-info.controller';
 import { ClanInfoService } from './clan-info.service';
 import { clanInfoProvider } from './table/clan-info.provider';
-import { ClanInfoRepository } from './table/clan-info.repository';
+import { ClanInfoRepository } from './clan-info.repository';
 
 @Module({
   imports: [NexonUserInfoModule],

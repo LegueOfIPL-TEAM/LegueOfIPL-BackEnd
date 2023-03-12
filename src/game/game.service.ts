@@ -1,6 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { ClanInfoService } from 'src/clan-info/clan-info.service';
-import { ClanInfoRepository } from 'src/clan-info/table/clan-info.repository';
+import { ClanInfoRepository } from 'src/clan-info/clan-info.repository';
 import { ClanMatchDetailService } from 'src/clan-match-detail/clan-match-detail.service';
 import {
   InsertAnyNoneData,
@@ -15,6 +15,7 @@ import { GameRepository } from './game.repository';
 import * as dayjs from 'dayjs';
 import { MatchDetails } from 'src/commons/dto/clan-info.dto/clan-info.dto';
 import { ClanMatchDetailRepository } from 'src/clan-match-detail/clan-match-detail.repository';
+import { NexonUserBattleLogRepository } from 'src/nexon-user-battle-log/nexon-user-battle-log.repository';
 
 @Injectable()
 export class GameService {
@@ -23,6 +24,7 @@ export class GameService {
     private clanInfoService: ClanInfoService,
     private clanInfoRepository: ClanInfoRepository,
     private nexonUserBattleLogService: NexonUserBattleLogService,
+    private nexonUserBattleLogRepository: NexonUserBattleLogRepository,
     private nexonUserInfoService: NexonUserInfoService,
     private nexonUserInfoRepository: NexonUserInfoRepository,
     private clanMatchDetailService: ClanMatchDetailService,
@@ -82,20 +84,26 @@ export class GameService {
       },
     ]);
 
-    // return allClanInfo;
-
     try {
       const existsGameInfo = await this.gameRepository.insertMatchData(
         gameInfo,
       );
 
-      const isertAnyNoneData = await this.insertAnyNonExistsData({
-        existsGameInfo,
-        nexonUserDetails: nexonUsers,
-        matchClanDetails: allClanInfo,
-      });
+      const existsClanInfo = await this.clanInfoRepository.findClanNos(
+        clanInfoNos,
+      );
 
-      return isertAnyNoneData;
+      const existsUserInfo =
+        await this.nexonUserInfoRepository.findNexonUserInfos(userNexonSns);
+
+      if (existsClanInfo.length === 0 && existsUserInfo.length === 0) {
+        const isertAnyNoneData = await this.insertAnyNonExistsData({
+          existsGameInfo,
+          nexonUserDetails: nexonUsers,
+          matchClanDetails: allClanInfo,
+        });
+        return isertAnyNoneData;
+      }
     } catch (e) {
       throw new HttpException(e.message, 500);
     }
@@ -106,32 +114,44 @@ export class GameService {
     nexonUserDetails,
     matchClanDetails,
   }: InsertAnyNoneData) {
-    const nonDuplicateClanInfos = matchClanDetails.reduce((acc, item) => {
-      const existingItem = acc.find((i) => i.clanNo === item.clanNo);
+    const nonDuplicateClanInfos = [];
+    const matchResults = [];
+    const battleLogs = [];
+
+    const userSns = nexonUserDetails.flatMap((user) => [user.userNexonSn]);
+
+    matchClanDetails.forEach((item) => {
+      // 주어진 데이터중 겹치지 않은 클랜의 정보를 필터링
+      const existingItem = nonDuplicateClanInfos.find(
+        (i) => i.clanNo === item.clanNo,
+      );
+
       if (!existingItem) {
-        acc.push({
+        nonDuplicateClanInfos.push({
           clanName: item.clanName,
           clanNo: item.clanNo,
           clanMark1: item.clanMark1,
           clanMark2: item.clanMark2,
         });
       }
-      return acc;
-    }, []);
+    });
 
-    const clanInfos = await this.clanInfoRepository.createClanInfoNoneDuplicate(
-      nonDuplicateClanInfos,
-    );
+    const createClanInfos =
+      await this.clanInfoRepository.createClanInfoNoneDuplicate(
+        nonDuplicateClanInfos,
+      );
 
-    const gameMatchDetails = matchClanDetails.reduce((acc, item) => {
+    matchClanDetails.forEach((item) => {
+      // 생성된 ClanInfo에서 id 수급
+      const ourClanInfo = createClanInfos.find((i) => i.clanNo === item.clanNo);
+
+      // 주어진 데이터를 이용하여 생성된 Game테이블 id 수급
       const gameInfos = existsGameInfo.find(
         (i) => i.matchKey === item.matchKey,
       );
 
-      const ourClanInfo = clanInfos.find((i) => i.clanNo === item.clanNo);
-
-      if (existsGameInfo) {
-        acc.push({
+      if (gameInfos) {
+        matchResults.push({
           isRedTeam:
             item?.result === 'redTeamWin' || item?.result === 'redTeamLose'
               ? true
@@ -148,14 +168,66 @@ export class GameService {
           clanId: ourClanInfo.id,
         });
       }
-      return acc;
-    }, []);
+    });
 
-    const matchResults =
-      await this.clanMatchDetailRepository.createClanMatchDetail(
-        gameMatchDetails,
+    const createMatchResults =
+      await this.clanMatchDetailRepository.createClanMatchDetail(matchResults);
+
+    const createNexonUserInfos =
+      await this.nexonUserInfoRepository.createAllNexonUser(userSns);
+
+    matchClanDetails.forEach((matchDetail) => {
+      const usertBattleLogs = matchDetail.userList.map(
+        ({
+          nickname,
+          userNexonSn,
+          kill,
+          death,
+          assist,
+          damage,
+          grade,
+          weapon,
+        }) => {
+          const existsUser = createNexonUserInfos.find(
+            (u) => u.userNexonSn === userNexonSn,
+          );
+          const existsGame = existsGameInfo.find(
+            (game) => game.matchKey === matchDetail.matchKey,
+          );
+          const response = {
+            nickname,
+            kill,
+            death,
+            assist,
+            damage,
+            grade,
+            weapon,
+            gameId: existsGame.id,
+            nexonUserId: existsUser.id,
+          };
+
+          return response;
+        },
       );
 
-    return matchResults;
+      battleLogs.push(usertBattleLogs);
+    });
+
+    const flatBattleLogs = battleLogs.flat();
+
+    const createUserBattleLogs =
+      await this.nexonUserBattleLogRepository.createMatchDetailsWithUserId(
+        flatBattleLogs,
+      );
+
+    const response = {
+      existsGameInfo,
+      createClanInfos,
+      createMatchResults,
+      createNexonUserInfos,
+      createUserBattleLogs,
+    };
+
+    return response;
   }
 }

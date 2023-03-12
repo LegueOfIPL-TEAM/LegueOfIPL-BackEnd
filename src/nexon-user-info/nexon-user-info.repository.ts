@@ -30,7 +30,8 @@ export class NexonUserInfoRepository {
       return createUsers;
     });
 
-    const response = Promise.all(insertUserInfoInDB);
-    return response;
+    const response = await Promise.all(insertUserInfoInDB);
+    const flatResponse = response.flat();
+    return flatResponse;
   }
 }

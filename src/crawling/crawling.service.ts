@@ -367,7 +367,7 @@ export class CrawlingService {
             kill: 0,
             death: 0,
             assist: 0,
-            damage: 0,
+            damage: '0',
             grade: '',
             weapon: weapon === 'rifle' || weapon === 'sniper' ? weapon : null,
           };
@@ -384,7 +384,7 @@ export class CrawlingService {
             kill: 0,
             death: 0,
             assist: 0,
-            damage: 0,
+            damage: '0',
             grade: '',
             weapon:
               targetWeapon === 'rifle' || targetWeapon === 'sniper'

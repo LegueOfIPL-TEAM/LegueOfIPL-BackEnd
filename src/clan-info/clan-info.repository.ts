@@ -6,7 +6,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { CLAN_INFO } from 'src/core/constants';
-import { ClanInfo } from './clan-info.entity';
+import { ClanInfo } from './table/clan-info.entity';
 import {
   MatchDetails,
   findManyclanNo,

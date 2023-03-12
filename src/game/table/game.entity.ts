@@ -47,6 +47,6 @@ export class Game extends Model {
   @HasMany(() => NexonUserBattleLog)
   nexonUserBattleLog: NexonUserBattleLog[];
 
-  @HasOne(() => ClanMatchDetail)
-  clanMatchDetail: ClanMatchDetail;
+  @HasMany(() => ClanMatchDetail)
+  clanMatchDetail: ClanMatchDetail[];
 }

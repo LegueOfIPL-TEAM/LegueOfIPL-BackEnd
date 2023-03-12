@@ -9,7 +9,7 @@ import {
 import { plainToClass } from 'class-transformer';
 import { MatchDetails } from 'src/commons/dto/clan-info.dto/clan-info.dto';
 import { ClanInfoService } from './clan-info.service';
-import { ClanInfoRepository } from './table/clan-info.repository';
+import { ClanInfoRepository } from './clan-info.repository';
 
 @Controller('clan-info')
 export class ClanInfoController {

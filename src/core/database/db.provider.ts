@@ -47,23 +47,23 @@ export const databaseProviders = [
         default:
           config = databaseConfig.development;
       }
-      const sequelize = new Sequelize(config);
-      sequelize.addModels([
-        Board,
-        Game,
-        ClanInfo,
-        NexonUserInfo,
-        NexonUserBattleLog,
-        ClanMatchDetail,
-      ]);
       try {
+        const sequelize = new Sequelize(config);
+        sequelize.addModels([
+          Board,
+          Game,
+          ClanInfo,
+          NexonUserInfo,
+          NexonUserBattleLog,
+          ClanMatchDetail,
+        ]);
         await sequelize.authenticate();
         Logger.log('Connection has been established successfully.');
+        await sequelize.sync({ force: true });
+        return sequelize;
       } catch (err) {
         Logger.error('Unable to connect to the database:', err);
       }
-      await sequelize.sync({ force: true });
-      return sequelize;
     },
   },
 ];
