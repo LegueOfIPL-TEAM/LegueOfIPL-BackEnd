@@ -37,7 +37,7 @@ export class NexonUserDetails {
   kill: number;
   death: number;
   assist: number;
-  damage: number;
+  damage: string;
   grade: string;
   weapon: string;
 }

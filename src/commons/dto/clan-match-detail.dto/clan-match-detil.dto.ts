@@ -1,7 +1,7 @@
 export class MatchDetailsInResult {
   isRedTeam: boolean;
   isBlueTeam: boolean;
-  result: string;
+  result: boolean;
   gameId: number;
   clanId: number;
 }

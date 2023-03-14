@@ -49,7 +49,7 @@ export class UserList {
   kill: number;
   death: number;
   assist: number;
-  damage: number;
+  damage: string;
   grade: string;
   weapon: string;
 }
@@ -59,6 +59,6 @@ export class Players {
   kill: number;
   death: number;
   assist: number;
-  damage: number;
+  damage: string;
   grade: string;
 }

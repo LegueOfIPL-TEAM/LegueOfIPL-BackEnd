@@ -58,10 +58,8 @@ export class GameService {
     const allClanInfo = matchDetails.flatMap((match) => [
       {
         matchKey: match.matchKey,
-        result:
-          match.blueResult === 'win' || match.blueResult === 'lose'
-            ? 'blueTeamLose'
-            : 'blueTeamWin',
+        result: match.blueResult === 'win' ? 'blueTeamWin' : 'blueTeamLose',
+
         clanName: match.blueClanName,
         clanNo: match.blueClanNo,
         clanMark1: match.blueClanMark1,
@@ -71,10 +69,7 @@ export class GameService {
       },
       {
         matchKey: match.matchKey,
-        result:
-          match.redResult === 'win' || match.redResult === 'lose'
-            ? 'redTeamWin'
-            : 'redTeamLose',
+        result: match.redResult === 'win' ? 'redTeamWin' : 'redTeamLose',
         clanName: match.redClanName,
         clanNo: match.redClanNo,
         clanMark1: match.redClanMark1,
@@ -97,11 +92,12 @@ export class GameService {
         await this.nexonUserInfoRepository.findNexonUserInfos(userNexonSns);
 
       if (existsClanInfo.length === 0 && existsUserInfo.length === 0) {
-        const isertAnyNoneData = await this.insertAnyNonExistsData({
+        const isertAnyNoneData = await this.processClanMatchDetails({
           existsGameInfo,
           nexonUserDetails: nexonUsers,
           matchClanDetails: allClanInfo,
         });
+
         return isertAnyNoneData;
       }
     } catch (e) {
@@ -109,75 +105,80 @@ export class GameService {
     }
   }
 
-  async insertAnyNonExistsData({
+  async processClanMatchDetails({
     existsGameInfo,
-    nexonUserDetails,
     matchClanDetails,
+    nexonUserDetails,
   }: InsertAnyNoneData) {
-    const nonDuplicateClanInfos = [];
-    const matchResults = [];
-    const battleLogs = [];
+    const winLossCounts = matchClanDetails.reduce(
+      (counts, { clanName, result }) => {
+        counts[clanName] = counts[clanName] || { clanName, wins: 0, losses: 0 };
+        counts[clanName][result.endsWith('Win') ? 'wins' : 'losses']++;
+        return counts;
+      },
+      {},
+    );
 
-    const userSns = nexonUserDetails.flatMap((user) => [user.userNexonSn]);
+    const ladderPoints = Object.values(winLossCounts).map(
+      ({ clanName, wins, losses }) => {
+        return { clanName, ladderPoint: 1000 + wins * 15 - losses * 11 };
+      },
+    );
 
-    matchClanDetails.forEach((item) => {
-      // 주어진 데이터중 겹치지 않은 클랜의 정보를 필터링
-      const existingItem = nonDuplicateClanInfos.find(
-        (i) => i.clanNo === item.clanNo,
-      );
-
-      if (!existingItem) {
-        nonDuplicateClanInfos.push({
-          clanName: item.clanName,
-          clanNo: item.clanNo,
-          clanMark1: item.clanMark1,
-          clanMark2: item.clanMark2,
-        });
-      }
-    });
+    const clanInfos = matchClanDetails.reduce(
+      (infos, { clanName, result, clanNo, clanMark1, clanMark2 }) => {
+        const existing = infos.find((i) => i.clanNo === clanNo);
+        const ladderPoint =
+          ladderPoints.find((lp) => lp.clanName === clanName)?.ladderPoint || 0;
+        if (!existing) {
+          infos.push({
+            clanName,
+            result,
+            clanNo,
+            clanMark1,
+            clanMark2,
+            ladderPoint,
+          });
+        }
+        return infos;
+      },
+      [],
+    );
 
     const createClanInfos =
-      await this.clanInfoRepository.createClanInfoNoneDuplicate(
-        nonDuplicateClanInfos,
-      );
+      await this.clanInfoRepository.createClanInfoNoneDuplicate(clanInfos);
 
-    matchClanDetails.forEach((item) => {
-      // 생성된 ClanInfo에서 id 수급
-      const ourClanInfo = createClanInfos.find((i) => i.clanNo === item.clanNo);
-
-      // 주어진 데이터를 이용하여 생성된 Game테이블 id 수급
-      const gameInfos = existsGameInfo.find(
-        (i) => i.matchKey === item.matchKey,
-      );
-
-      if (gameInfos) {
-        matchResults.push({
-          isRedTeam:
-            item?.result === 'redTeamWin' || item?.result === 'redTeamLose'
-              ? true
-              : false,
-          isBlueTeam:
-            item?.result === 'blueTeamWin' || item?.result === 'blueTeamLose'
-              ? true
-              : false,
-          result:
-            item?.result === 'redTeamWin' || item?.result === 'blueTeamWin'
-              ? true
-              : false,
-          gameId: gameInfos.id,
-          clanId: ourClanInfo.id,
-        });
-      }
-    });
+    const matchResults = matchClanDetails
+      .map(({ matchKey, clanNo, result }) => {
+        const game = existsGameInfo.find((g) => g.matchKey === matchKey);
+        const clan = createClanInfos.find((c) => c.clanNo === clanNo);
+        return game && clan
+          ? {
+              gameId: game.id,
+              clanId: clan.id,
+              isRedTeam: result.endsWith('Lose') && result.includes('redTeam'),
+              isBlueTeam:
+                result.endsWith('Lose') && result.includes('blueTeam'),
+              result: result.endsWith('Win'),
+            }
+          : null;
+      })
+      .filter(Boolean);
 
     const createMatchResults =
       await this.clanMatchDetailRepository.createClanMatchDetail(matchResults);
 
-    const createNexonUserInfos =
-      await this.nexonUserInfoRepository.createAllNexonUser(userSns);
+    const userSns = nexonUserDetails.map(({ userNexonSn }) => userNexonSn);
+    const nexonUsers = await this.nexonUserInfoRepository.createAllNexonUser(
+      userSns,
+    );
 
-    matchClanDetails.forEach((matchDetail) => {
-      const usertBattleLogs = matchDetail.userList.map(
+    const battleLogs = matchClanDetails.flatMap(({ matchKey, userList }) => {
+      const gameId = existsGameInfo.find((g) => g.matchKey === matchKey)?.id;
+      if (!gameId) {
+        return [];
+      }
+      return userList.map(
         ({
           nickname,
           userNexonSn,
@@ -188,13 +189,13 @@ export class GameService {
           grade,
           weapon,
         }) => {
-          const existsUser = createNexonUserInfos.find(
+          const nexonUserId = nexonUsers.find(
             (u) => u.userNexonSn === userNexonSn,
-          );
-          const existsGame = existsGameInfo.find(
-            (game) => game.matchKey === matchDetail.matchKey,
-          );
+          )!.id;
+
           const response = {
+            gameId,
+            nexonUserId,
             nickname,
             kill,
             death,
@@ -202,32 +203,24 @@ export class GameService {
             damage,
             grade,
             weapon,
-            gameId: existsGame.id,
-            nexonUserId: existsUser.id,
           };
 
           return response;
         },
       );
-
-      battleLogs.push(usertBattleLogs);
     });
-
-    const flatBattleLogs = battleLogs.flat();
 
     const createUserBattleLogs =
       await this.nexonUserBattleLogRepository.createMatchDetailsWithUserId(
-        flatBattleLogs,
+        battleLogs,
       );
 
-    const response = {
+    return {
       existsGameInfo,
       createClanInfos,
       createMatchResults,
-      createNexonUserInfos,
+      nexonUsers,
       createUserBattleLogs,
     };
-
-    return response;
   }
 }

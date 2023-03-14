@@ -117,7 +117,7 @@ export class ClanInfoRepository {
     matchClanDetails: ClanInfo[],
   ): Promise<ClanInfo[]> {
     const response = matchClanDetails.map(
-      async ({ clanNo, clanName, clanMark1, clanMark2 }) => {
+      async ({ clanNo, clanName, clanMark1, clanMark2, ladderPoint }) => {
         const createAllDataNotDuplicate = await this.clanInfoEntitiy.bulkCreate(
           [
             {
@@ -125,6 +125,7 @@ export class ClanInfoRepository {
               clanName,
               clanMark1,
               clanMark2,
+              ladderPoint,
             },
           ],
         );

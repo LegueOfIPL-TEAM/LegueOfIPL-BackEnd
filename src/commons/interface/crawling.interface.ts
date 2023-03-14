@@ -73,7 +73,7 @@ export interface Player {
   kill: number;
   death: number;
   assist: number;
-  damage: number;
+  damage: string;
   grade: string;
   weapon: string;
 }
