@@ -5,8 +5,13 @@ import { NexonUserInfo } from '../nexon-user-info.dto/nexon-user-info.dto';
 
 export class InsertAnyNoneData {
   existsGameInfo: Game[];
-  nexonUserDetails: NexonUserInfo[];
   matchClanDetails: MatchClanInfoDetails[];
+}
+
+export class InsertUserInfos {
+  existsGameInfo: Game[];
+  matchDetails: MatchClanInfoDetails;
+  existingUserInfo: NexonUserInfo[];
 }
 
 export class GameDetails {

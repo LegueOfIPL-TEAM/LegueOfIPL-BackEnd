@@ -4,6 +4,7 @@ import { ClanInfoRepository } from 'src/clan-info/clan-info.repository';
 import { ClanMatchDetailService } from 'src/clan-match-detail/clan-match-detail.service';
 import {
   InsertAnyNoneData,
+  InsertUserInfos,
   MatchClanInfoDetails,
 } from 'src/commons/dto/game.dto/game.dto';
 import { AllOfDataAfterRefactoring } from 'src/commons/interface/crawling.interface';
@@ -16,6 +17,7 @@ import * as dayjs from 'dayjs';
 import { MatchDetails } from 'src/commons/dto/clan-info.dto/clan-info.dto';
 import { ClanMatchDetailRepository } from 'src/clan-match-detail/clan-match-detail.repository';
 import { NexonUserBattleLogRepository } from 'src/nexon-user-battle-log/nexon-user-battle-log.repository';
+import { NexonUserInsertDb } from 'src/commons/dto/nexon-user-info.dto/nexon-user-info.dto';
 
 @Injectable()
 export class GameService {
@@ -94,11 +96,16 @@ export class GameService {
       if (existsClanInfo.length === 0 && existsUserInfo.length === 0) {
         const isertAnyNoneData = await this.processClanMatchDetails({
           existsGameInfo,
-          nexonUserDetails: nexonUsers,
           matchClanDetails: allClanInfo,
         });
 
         return isertAnyNoneData;
+      }
+
+      if (
+        existsClanInfo.length === clanInfoNos.length &&
+        existsUserInfo.length !== userNexonSns.length
+      ) {
       }
     } catch (e) {
       throw new HttpException(e.message, 500);
@@ -108,7 +115,6 @@ export class GameService {
   async processClanMatchDetails({
     existsGameInfo,
     matchClanDetails,
-    nexonUserDetails,
   }: InsertAnyNoneData) {
     const winLossCounts = matchClanDetails.reduce(
       (counts, { clanName, result }) => {
@@ -119,11 +125,37 @@ export class GameService {
       {},
     );
 
+    const userWinLossCounts = matchClanDetails.reduce((acc, cur) => {
+      const { userList, result } = cur;
+
+      userList.forEach((user) => {
+        const { userNexonSn } = user;
+        acc[userNexonSn] = acc[userNexonSn] || {
+          userNexonSn,
+          ladderPoint: 1000,
+        };
+
+        if (result.endsWith('Win')) {
+          acc[userNexonSn].ladderPoint += 15;
+        } else {
+          acc[userNexonSn].ladderPoint -= 11;
+        }
+      });
+
+      return acc;
+    }, {});
+
     const ladderPoints = Object.values(winLossCounts).map(
       ({ clanName, wins, losses }) => {
         return { clanName, ladderPoint: 1000 + wins * 15 - losses * 11 };
       },
     );
+
+    const userLadderPointsWithUserNexonSn = Object.values(
+      userWinLossCounts,
+    ).map(({ ladderPoint, userNexonSn }: NexonUserInsertDb) => {
+      return { userNexonSn, ladderPoint };
+    });
 
     const clanInfos = matchClanDetails.reduce(
       (infos, { clanName, result, clanNo, clanMark1, clanMark2 }) => {
@@ -152,13 +184,19 @@ export class GameService {
       .map(({ matchKey, clanNo, result }) => {
         const game = existsGameInfo.find((g) => g.matchKey === matchKey);
         const clan = createClanInfos.find((c) => c.clanNo === clanNo);
+        console.log(result);
+        console.log({
+          isRedTeam: result.includes('redTeam'),
+          isBlueTeam: result.includes('blueTeam'),
+          result: result.endsWith('Win'),
+        });
+
         return game && clan
           ? {
               gameId: game.id,
               clanId: clan.id,
-              isRedTeam: result.endsWith('Lose') && result.includes('redTeam'),
-              isBlueTeam:
-                result.endsWith('Lose') && result.includes('blueTeam'),
+              isRedTeam: result.includes('redTeam'),
+              isBlueTeam: result.includes('blueTeam'),
               result: result.endsWith('Win'),
             }
           : null;
@@ -168,9 +206,8 @@ export class GameService {
     const createMatchResults =
       await this.clanMatchDetailRepository.createClanMatchDetail(matchResults);
 
-    const userSns = nexonUserDetails.map(({ userNexonSn }) => userNexonSn);
     const nexonUsers = await this.nexonUserInfoRepository.createAllNexonUser(
-      userSns,
+      userLadderPointsWithUserNexonSn,
     );
 
     const battleLogs = matchClanDetails.flatMap(({ matchKey, userList }) => {
@@ -223,4 +260,10 @@ export class GameService {
       createUserBattleLogs,
     };
   }
+
+  async createUserInfos({
+    existsGameInfo,
+    matchDetails,
+    existingUserInfo,
+  }: InsertUserInfos) {}
 }

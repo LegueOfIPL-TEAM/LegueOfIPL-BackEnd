@@ -14,3 +14,8 @@ export class NexonUserInfo {
   grade: string;
   weapon: string;
 }
+
+export class NexonUserInsertDb {
+  userNexonSn: number;
+  ladderPoint: number;
+}

@@ -36,7 +36,7 @@ export class ClanMatchDetail extends Model {
     type: DataType.BOOLEAN,
     defaultValue: false,
   })
-  isblueTeam: boolean;
+  isBlueTeam: boolean;
 
   @Column({
     type: DataType.BOOLEAN,

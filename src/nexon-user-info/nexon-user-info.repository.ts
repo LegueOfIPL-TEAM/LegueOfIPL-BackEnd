@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { NexonUserInsertDb } from 'src/commons/dto/nexon-user-info.dto/nexon-user-info.dto';
 import { NEXON_USER_INFO } from 'src/core/constants';
 import { NexonUserInfo } from './table/nexon-user-info.entitiy';
 
@@ -19,16 +20,19 @@ export class NexonUserInfoRepository {
     return allUserNexon;
   }
 
-  async createAllNexonUser(userInfos: Array<number>) {
-    const insertUserInfoInDB = userInfos.map(async (user) => {
-      const createUsers = await this.nexonUserInfoModel.bulkCreate([
-        {
-          userNexonSn: user,
-        },
-      ]);
+  async createAllNexonUser(userInfos: NexonUserInsertDb[]) {
+    const insertUserInfoInDB = userInfos.map(
+      async ({ userNexonSn, ladderPoint }) => {
+        const createUsers = await this.nexonUserInfoModel.bulkCreate([
+          {
+            userNexonSn,
+            ladderPoint,
+          },
+        ]);
 
-      return createUsers;
-    });
+        return createUsers;
+      },
+    );
 
     const response = await Promise.all(insertUserInfoInDB);
     const flatResponse = response.flat();
