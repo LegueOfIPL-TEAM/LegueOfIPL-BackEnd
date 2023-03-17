@@ -59,7 +59,7 @@ export const databaseProviders = [
         ]);
         await sequelize.authenticate();
         Logger.log('Connection has been established successfully.');
-        await sequelize.sync({ force: true });
+        await sequelize.sync({ force: false });
         return sequelize;
       } catch (err) {
         Logger.error('Unable to connect to the database:', err);

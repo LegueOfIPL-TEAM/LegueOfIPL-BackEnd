@@ -4,8 +4,7 @@ import { ClanInfoRepository } from 'src/clan-info/clan-info.repository';
 import { ClanMatchDetailService } from 'src/clan-match-detail/clan-match-detail.service';
 import {
   InsertAnyNoneData,
-  InsertUserInfos,
-  MatchClanInfoDetails,
+  MissingPlayerInsert,
 } from 'src/commons/dto/game.dto/game.dto';
 import { AllOfDataAfterRefactoring } from 'src/commons/interface/crawling.interface';
 import { NexonUserBattleLogService } from 'src/nexon-user-battle-log/nexon-user-battle-log.service';
@@ -54,14 +53,21 @@ export class GameService {
       match.blueClanNo,
     ]);
 
+    const nonDpulicateClanInfoNos = clanInfoNos.filter(
+      (value, index) => clanInfoNos.indexOf(value) === index,
+    );
+
     // user NexonSn array
     const userNexonSns = nexonUsers.flatMap((user) => [user.userNexonSn]);
+
+    const nonDpulicateSnNos = userNexonSns.filter(
+      (value, index) => userNexonSns.indexOf(value) === index,
+    );
 
     const allClanInfo = matchDetails.flatMap((match) => [
       {
         matchKey: match.matchKey,
         result: match.blueResult === 'win' ? 'blueTeamWin' : 'blueTeamLose',
-
         clanName: match.blueClanName,
         clanNo: match.blueClanNo,
         clanMark1: match.blueClanMark1,
@@ -103,9 +109,17 @@ export class GameService {
       }
 
       if (
-        existsClanInfo.length === clanInfoNos.length &&
-        existsUserInfo.length !== userNexonSns.length
+        existsClanInfo.length === nonDpulicateClanInfoNos.length &&
+        existsUserInfo.length !== nonDpulicateSnNos.length
       ) {
+        console.log('this', '654628680');
+        const missingUser = await this.createMissingPlayers({
+          existsPlayer: existsUserInfo,
+          existsGameInfo,
+          matchInfos: allClanInfo,
+        });
+
+        return missingUser;
       }
     } catch (e) {
       throw new HttpException(e.message, 500);
@@ -184,13 +198,6 @@ export class GameService {
       .map(({ matchKey, clanNo, result }) => {
         const game = existsGameInfo.find((g) => g.matchKey === matchKey);
         const clan = createClanInfos.find((c) => c.clanNo === clanNo);
-        console.log(result);
-        console.log({
-          isRedTeam: result.includes('redTeam'),
-          isBlueTeam: result.includes('blueTeam'),
-          result: result.endsWith('Win'),
-        });
-
         return game && clan
           ? {
               gameId: game.id,
@@ -261,9 +268,58 @@ export class GameService {
     };
   }
 
-  async createUserInfos({
+  async createMissingPlayers({
+    existsPlayer,
     existsGameInfo,
-    matchDetails,
-    existingUserInfo,
-  }: InsertUserInfos) {}
+    matchInfos,
+  }: MissingPlayerInsert) {
+    const userWinLossCounts = matchInfos.reduce((acc, cur) => {
+      const { userList, result } = cur;
+
+      userList.forEach((user) => {
+        const { userNexonSn } = user;
+        acc[userNexonSn] = acc[userNexonSn] || {
+          userNexonSn,
+          ladderPoint: 1000,
+        };
+
+        if (result.endsWith('Win')) {
+          acc[userNexonSn].ladderPoint += 15;
+        } else {
+          acc[userNexonSn].ladderPoint -= 11;
+        }
+      });
+
+      return acc;
+    }, {});
+
+    const existsUserLadderPoint = matchInfos.reduce((acc, cur) => {
+      const { result, userList } = cur;
+
+      userList.forEach((user) => {
+        const findUser = existsPlayer.find(
+          (u) => u.userNexonSn === user.userNexonSn,
+        );
+
+        acc[findUser.userNexonSn] = acc[findUser.userNexonSn] || {
+          userNexonSn: findUser.userNexonSn,
+          ladderPoint: findUser.ladderPoint,
+        };
+
+        if (result.endsWith('Win')) {
+          acc[findUser.userNexonSn].ladderPoint += 15;
+        } else {
+          acc[findUser.userNexonSn].ladderPoint -= 11;
+        }
+      });
+
+      return acc;
+    }, {});
+
+    return test;
+
+    // existsUser update data
+
+    // nonExistsUser create data
+  }
 }

@@ -1,17 +1,17 @@
 import { ClanInfo } from 'src/clan-info/table/clan-info.entity';
 import { Game } from 'src/game/table/game.entity';
+import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
 import { NexonUserDetails } from '../clan-info.dto/clan-info.dto';
-import { NexonUserInfo } from '../nexon-user-info.dto/nexon-user-info.dto';
 
 export class InsertAnyNoneData {
   existsGameInfo: Game[];
   matchClanDetails: MatchClanInfoDetails[];
 }
 
-export class InsertUserInfos {
+export class MissingPlayerInsert {
+  existsPlayer: NexonUserInfo[];
   existsGameInfo: Game[];
-  matchDetails: MatchClanInfoDetails;
-  existingUserInfo: NexonUserInfo[];
+  matchInfos: MatchClanInfoDetails[];
 }
 
 export class GameDetails {
