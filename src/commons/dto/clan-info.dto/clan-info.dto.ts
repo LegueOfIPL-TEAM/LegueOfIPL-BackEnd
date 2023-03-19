@@ -48,3 +48,8 @@ export class NexonClanInfoDetails {
   clanMark1: string;
   clanMark2: string;
 }
+
+export class UpdateLadderPoint {
+  id: number;
+  ladderPoint: number;
+}

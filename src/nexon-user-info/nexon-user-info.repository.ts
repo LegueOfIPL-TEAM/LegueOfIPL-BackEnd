@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { async } from 'rxjs';
 import { NexonUserInsertDb } from 'src/commons/dto/nexon-user-info.dto/nexon-user-info.dto';
 import { NEXON_USER_INFO } from 'src/core/constants';
 import { NexonUserInfo } from './table/nexon-user-info.entitiy';
@@ -37,5 +38,27 @@ export class NexonUserInfoRepository {
     const response = await Promise.all(insertUserInfoInDB);
     const flatResponse = response.flat();
     return flatResponse;
+  }
+
+  async existsUsersUpdate(userInfos: NexonUserInsertDb[]) {
+    const updateNexonUsers = userInfos.map(
+      async ({ ladderPoint, userNexonSn }) => {
+        const [numRows, [updatedUser]] = await this.nexonUserInfoModel.update(
+          { ladderPoint },
+          {
+            where: {
+              userNexonSn,
+            },
+            returning: true,
+          },
+        );
+
+        return updatedUser;
+      },
+    );
+
+    const waitArray = await Promise.all(updateNexonUsers);
+
+    return waitArray.flat();
   }
 }

@@ -5,13 +5,26 @@ import { NexonUserDetails } from '../clan-info.dto/clan-info.dto';
 
 export class InsertAnyNoneData {
   existsGameInfo: Game[];
-  matchClanDetails: MatchClanInfoDetails[];
+  matchClanDetails: MatchOneOfClanDetail[];
 }
 
 export class MissingPlayerInsert {
   existsPlayer: NexonUserInfo[];
   existsGameInfo: Game[];
-  matchInfos: MatchClanInfoDetails[];
+  existsClan: ClanInfo[];
+  matchInfos: MatchOneOfClanDetail[];
+}
+
+export class BattleLogsWithRelation {
+  matchDetails: MatchOneOfClanDetail[];
+  existsGameInfo: Game[];
+  existsNexonUser: NexonUserInfo[];
+}
+
+export class MatchDetailsWithRelation {
+  matchDetails: MatchOneOfClanDetail[];
+  existsGameInfo: Game[];
+  clanInfos: ClanInfo[];
 }
 
 export class GameDetails {
@@ -21,7 +34,7 @@ export class GameDetails {
   plimit: string;
 }
 
-export class MatchClanInfoDetails {
+export class MatchOneOfClanDetail {
   matchKey: string;
   result: string;
   clanName: string;

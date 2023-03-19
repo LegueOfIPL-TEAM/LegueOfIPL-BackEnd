@@ -3,7 +3,10 @@ import { ClanInfoService } from 'src/clan-info/clan-info.service';
 import { ClanInfoRepository } from 'src/clan-info/clan-info.repository';
 import { ClanMatchDetailService } from 'src/clan-match-detail/clan-match-detail.service';
 import {
+  BattleLogsWithRelation,
   InsertAnyNoneData,
+  MatchDetailsWithRelation,
+  MatchOneOfClanDetail,
   MissingPlayerInsert,
 } from 'src/commons/dto/game.dto/game.dto';
 import { AllOfDataAfterRefactoring } from 'src/commons/interface/crawling.interface';
@@ -13,7 +16,6 @@ import { NexonUserInfoService } from 'src/nexon-user-info/nexon-user-info.servic
 import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
 import { GameRepository } from './game.repository';
 import * as dayjs from 'dayjs';
-import { MatchDetails } from 'src/commons/dto/clan-info.dto/clan-info.dto';
 import { ClanMatchDetailRepository } from 'src/clan-match-detail/clan-match-detail.repository';
 import { NexonUserBattleLogRepository } from 'src/nexon-user-battle-log/nexon-user-battle-log.repository';
 import { NexonUserInsertDb } from 'src/commons/dto/nexon-user-info.dto/nexon-user-info.dto';
@@ -22,13 +24,9 @@ import { NexonUserInsertDb } from 'src/commons/dto/nexon-user-info.dto/nexon-use
 export class GameService {
   constructor(
     private gameRepository: GameRepository,
-    private clanInfoService: ClanInfoService,
     private clanInfoRepository: ClanInfoRepository,
-    private nexonUserBattleLogService: NexonUserBattleLogService,
     private nexonUserBattleLogRepository: NexonUserBattleLogRepository,
-    private nexonUserInfoService: NexonUserInfoService,
     private nexonUserInfoRepository: NexonUserInfoRepository,
-    private clanMatchDetailService: ClanMatchDetailService,
     private clanMatchDetailRepository: ClanMatchDetailRepository,
   ) {}
 
@@ -100,26 +98,22 @@ export class GameService {
         await this.nexonUserInfoRepository.findNexonUserInfos(userNexonSns);
 
       if (existsClanInfo.length === 0 && existsUserInfo.length === 0) {
-        const isertAnyNoneData = await this.processClanMatchDetails({
+        return await this.processClanMatchDetails({
           existsGameInfo,
           matchClanDetails: allClanInfo,
         });
-
-        return isertAnyNoneData;
       }
 
       if (
         existsClanInfo.length === nonDpulicateClanInfoNos.length &&
         existsUserInfo.length !== nonDpulicateSnNos.length
       ) {
-        console.log('this', '654628680');
-        const missingUser = await this.createMissingPlayers({
+        return await this.createMissingPlayers({
           existsPlayer: existsUserInfo,
           existsGameInfo,
+          existsClan: existsClanInfo,
           matchInfos: allClanInfo,
         });
-
-        return missingUser;
       }
     } catch (e) {
       throw new HttpException(e.message, 500);
@@ -130,128 +124,30 @@ export class GameService {
     existsGameInfo,
     matchClanDetails,
   }: InsertAnyNoneData) {
-    const winLossCounts = matchClanDetails.reduce(
-      (counts, { clanName, result }) => {
-        counts[clanName] = counts[clanName] || { clanName, wins: 0, losses: 0 };
-        counts[clanName][result.endsWith('Win') ? 'wins' : 'losses']++;
-        return counts;
-      },
-      {},
-    );
-
-    const userWinLossCounts = matchClanDetails.reduce((acc, cur) => {
-      const { userList, result } = cur;
-
-      userList.forEach((user) => {
-        const { userNexonSn } = user;
-        acc[userNexonSn] = acc[userNexonSn] || {
-          userNexonSn,
-          ladderPoint: 1000,
-        };
-
-        if (result.endsWith('Win')) {
-          acc[userNexonSn].ladderPoint += 15;
-        } else {
-          acc[userNexonSn].ladderPoint -= 11;
-        }
-      });
-
-      return acc;
-    }, {});
-
-    const ladderPoints = Object.values(winLossCounts).map(
-      ({ clanName, wins, losses }) => {
-        return { clanName, ladderPoint: 1000 + wins * 15 - losses * 11 };
-      },
-    );
-
-    const userLadderPointsWithUserNexonSn = Object.values(
-      userWinLossCounts,
-    ).map(({ ladderPoint, userNexonSn }: NexonUserInsertDb) => {
-      return { userNexonSn, ladderPoint };
-    });
-
-    const clanInfos = matchClanDetails.reduce(
-      (infos, { clanName, result, clanNo, clanMark1, clanMark2 }) => {
-        const existing = infos.find((i) => i.clanNo === clanNo);
-        const ladderPoint =
-          ladderPoints.find((lp) => lp.clanName === clanName)?.ladderPoint || 0;
-        if (!existing) {
-          infos.push({
-            clanName,
-            result,
-            clanNo,
-            clanMark1,
-            clanMark2,
-            ladderPoint,
-          });
-        }
-        return infos;
-      },
-      [],
-    );
+    const { userLadder, clanLadder } = this.ladderPointAcc(matchClanDetails);
 
     const createClanInfos =
-      await this.clanInfoRepository.createClanInfoNoneDuplicate(clanInfos);
+      await this.clanInfoRepository.createClanInfoNoneDuplicate(clanLadder);
 
-    const matchResults = matchClanDetails
-      .map(({ matchKey, clanNo, result }) => {
-        const game = existsGameInfo.find((g) => g.matchKey === matchKey);
-        const clan = createClanInfos.find((c) => c.clanNo === clanNo);
-        return game && clan
-          ? {
-              gameId: game.id,
-              clanId: clan.id,
-              isRedTeam: result.includes('redTeam'),
-              isBlueTeam: result.includes('blueTeam'),
-              result: result.endsWith('Win'),
-            }
-          : null;
-      })
-      .filter(Boolean);
+    const matchDetailsWithRelation = this.matchDetailWithRelation({
+      matchDetails: matchClanDetails,
+      existsGameInfo,
+      clanInfos: createClanInfos,
+    });
 
     const createMatchResults =
-      await this.clanMatchDetailRepository.createClanMatchDetail(matchResults);
+      await this.clanMatchDetailRepository.createClanMatchDetail(
+        matchDetailsWithRelation,
+      );
 
     const nexonUsers = await this.nexonUserInfoRepository.createAllNexonUser(
-      userLadderPointsWithUserNexonSn,
+      userLadder,
     );
 
-    const battleLogs = matchClanDetails.flatMap(({ matchKey, userList }) => {
-      const gameId = existsGameInfo.find((g) => g.matchKey === matchKey)?.id;
-      if (!gameId) {
-        return [];
-      }
-      return userList.map(
-        ({
-          nickname,
-          userNexonSn,
-          kill,
-          death,
-          assist,
-          damage,
-          grade,
-          weapon,
-        }) => {
-          const nexonUserId = nexonUsers.find(
-            (u) => u.userNexonSn === userNexonSn,
-          )!.id;
-
-          const response = {
-            gameId,
-            nexonUserId,
-            nickname,
-            kill,
-            death,
-            assist,
-            damage,
-            grade,
-            weapon,
-          };
-
-          return response;
-        },
-      );
+    const battleLogs = this.userBattleLogsWithRelation({
+      matchDetails: matchClanDetails,
+      existsGameInfo,
+      existsNexonUser: nexonUsers,
     });
 
     const createUserBattleLogs =
@@ -271,55 +167,190 @@ export class GameService {
   async createMissingPlayers({
     existsPlayer,
     existsGameInfo,
+    existsClan,
     matchInfos,
   }: MissingPlayerInsert) {
-    const userWinLossCounts = matchInfos.reduce((acc, cur) => {
-      const { userList, result } = cur;
+    const existingUsers = [];
+    const newUsers = [];
+    const existsClanLadder = [];
 
-      userList.forEach((user) => {
-        const { userNexonSn } = user;
-        acc[userNexonSn] = acc[userNexonSn] || {
-          userNexonSn,
-          ladderPoint: 1000,
-        };
+    matchInfos.forEach(({ userList, result, clanNo }) => {
+      const clan = existsClan.find((clan) => clan.clanNo === clanNo);
 
-        if (result.endsWith('Win')) {
-          acc[userNexonSn].ladderPoint += 15;
-        } else {
-          acc[userNexonSn].ladderPoint -= 11;
-        }
-      });
+      const clanLadder = {
+        id: clan.id,
+        ladderPoint: clan.ladderPoint,
+      };
 
-      return acc;
-    }, {});
+      clanLadder.ladderPoint += result.endsWith('Win') ? 15 : -11;
 
-    const existsUserLadderPoint = matchInfos.reduce((acc, cur) => {
-      const { result, userList } = cur;
+      existsClanLadder.push(clanLadder);
 
       userList.forEach((user) => {
         const findUser = existsPlayer.find(
           (u) => u.userNexonSn === user.userNexonSn,
         );
 
-        acc[findUser.userNexonSn] = acc[findUser.userNexonSn] || {
-          userNexonSn: findUser.userNexonSn,
-          ladderPoint: findUser.ladderPoint,
-        };
+        if (findUser) {
+          const updatedUser = {
+            userNexonSn: findUser.userNexonSn,
+            ladderPoint: findUser.ladderPoint,
+          };
 
-        if (result.endsWith('Win')) {
-          acc[findUser.userNexonSn].ladderPoint += 15;
+          updatedUser.ladderPoint += result.endsWith('Win') ? 15 : -11;
+
+          existingUsers.push(updatedUser);
         } else {
-          acc[findUser.userNexonSn].ladderPoint -= 11;
+          const newUser = {
+            userNexonSn: user.userNexonSn,
+            ladderPoint: 1000,
+          };
+
+          newUser.ladderPoint += result.endsWith('Win') ? 15 : -11;
+
+          newUsers.push(newUser);
         }
       });
+    });
 
-      return acc;
-    }, {});
+    const [updateLadderExistsClan, updateExistsUserLadderPoint, createNewUser] =
+      await Promise.all([
+        this.clanInfoRepository.updateClanLadder(existsClanLadder),
+        this.nexonUserInfoRepository.existsUsersUpdate(existingUsers),
+        this.nexonUserInfoRepository.createAllNexonUser(newUsers),
+      ]);
 
-    return test;
+    const allUsers = [...updateExistsUserLadderPoint, ...createNewUser];
 
-    // existsUser update data
+    const matchDetailsWithRelation = this.matchDetailWithRelation({
+      matchDetails: matchInfos,
+      existsGameInfo,
+      clanInfos: updateLadderExistsClan,
+    });
 
-    // nonExistsUser create data
+    const battleLogs = this.userBattleLogsWithRelation({
+      matchDetails: matchInfos,
+      existsGameInfo,
+      existsNexonUser: allUsers,
+    });
+
+    const [createMatchDetails, createUserBattleLogs] = await Promise.all([
+      this.clanMatchDetailRepository.createClanMatchDetail(
+        matchDetailsWithRelation,
+      ),
+      this.nexonUserBattleLogRepository.createMatchDetailsWithUserId(
+        battleLogs,
+      ),
+    ]);
+
+    return {
+      allUsers,
+      createMatchDetails,
+      createUserBattleLogs,
+    };
+  }
+
+  ladderPointAcc(matchDetails: MatchOneOfClanDetail[]) {
+    const userLadder = [];
+    const clanLadder = [];
+
+    matchDetails.forEach(
+      ({ clanNo, result, userList, clanMark1, clanMark2 }) => {
+        const clanLadderPoint = {
+          clanNo,
+          ladderPoint: 1000,
+          clanMark1,
+          clanMark2,
+        };
+
+        clanLadderPoint.ladderPoint += result.endsWith('Win') ? 15 : -11;
+
+        clanLadder.push(clanLadderPoint);
+
+        userList.forEach(({ userNexonSn }) => {
+          const userLadderPoint = {
+            userNexonSn,
+            ladderPoint: 1000,
+          };
+
+          userLadderPoint.ladderPoint += result.endsWith('Win') ? 15 : -11;
+
+          userLadder.push(userLadderPoint);
+        });
+      },
+    );
+
+    return {
+      userLadder,
+      clanLadder,
+    };
+  }
+
+  matchDetailWithRelation({
+    matchDetails,
+    existsGameInfo,
+    clanInfos,
+  }: MatchDetailsWithRelation) {
+    const matchResults = matchDetails
+      .map(({ matchKey, clanNo, result }) => {
+        const game = existsGameInfo.find((g) => g.matchKey === matchKey);
+        const clan = clanInfos.find((c) => c.clanNo === clanNo);
+        return game && clan
+          ? {
+              gameId: game.id,
+              clanId: clan.id,
+              isRedTeam: result.includes('redTeam'),
+              isBlueTeam: result.includes('blueTeam'),
+              result: result.endsWith('Win'),
+            }
+          : null;
+      })
+      .filter(Boolean);
+
+    return matchResults;
+  }
+
+  userBattleLogsWithRelation({
+    matchDetails,
+    existsGameInfo,
+    existsNexonUser,
+  }: BattleLogsWithRelation) {
+    const battleLogs = matchDetails.flatMap(({ matchKey, userList }) => {
+      const gameId = existsGameInfo.find((g) => g.matchKey === matchKey)?.id;
+      if (!gameId) {
+        return [];
+      }
+      return userList.map(
+        ({
+          nickname,
+          userNexonSn,
+          kill,
+          death,
+          assist,
+          damage,
+          grade,
+          weapon,
+        }) => {
+          const nexonUserId = existsNexonUser.find(
+            (u) => u.userNexonSn === userNexonSn,
+          )!.id;
+
+          const response = {
+            gameId,
+            nexonUserId,
+            nickname,
+            kill,
+            death,
+            assist,
+            damage,
+            grade,
+            weapon,
+          };
+
+          return response;
+        },
+      );
+    });
+    return battleLogs;
   }
 }

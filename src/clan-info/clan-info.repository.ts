@@ -11,11 +11,12 @@ import {
   MatchDetails,
   findManyclanNo,
   NexonClanInfoDetails,
+  UpdateLadderPoint,
 } from 'src/commons/dto/clan-info.dto/clan-info.dto';
 import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
 import { InjectConnection, InjectModel } from '@nestjs/sequelize';
-import { MatchClanInfoDetails } from 'src/commons/dto/game.dto/game.dto';
 import { Sequelize } from 'sequelize';
+import { LookupAddress } from 'dns';
 
 @Injectable()
 export class ClanInfoRepository {
@@ -137,5 +138,21 @@ export class ClanInfoRepository {
     const waitArray = await Promise.all(response);
     const flatResponse = waitArray.flat();
     return flatResponse;
+  }
+
+  async updateClanLadder(updateInfo: UpdateLadderPoint[]) {
+    const response = updateInfo.map(async ({ id, ladderPoint }) => {
+      const [num, [clanInfo]] = await this.clanInfoEntitiy.update(
+        { ladderPoint },
+        {
+          where: { id },
+          returning: true,
+        },
+      );
+      return clanInfo;
+    });
+
+    const waitArray = await Promise.all(response);
+    return waitArray.flat();
   }
 }
