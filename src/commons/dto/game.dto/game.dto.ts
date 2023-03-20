@@ -21,6 +21,13 @@ export class BattleLogsWithRelation {
   existsNexonUser: NexonUserInfo[];
 }
 
+export class MissingClanInsert {
+  matchDetails: MatchOneOfClanDetail[];
+  existsClan: ClanInfo[];
+  existsGame: Game[];
+  existsUser: NexonUserInfo[];
+}
+
 export class MatchDetailsWithRelation {
   matchDetails: MatchOneOfClanDetail[];
   existsGameInfo: Game[];

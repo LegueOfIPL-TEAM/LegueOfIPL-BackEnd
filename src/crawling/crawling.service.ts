@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
-
 import { enviroment } from 'src/commons/enviroment';
 import {
   getManyMatchListAndUrls,
-  getMatchDetails,
   GameLogs,
   AllUserInMatch,
   AllOfDataAfterRefactoring,

@@ -1,24 +1,19 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { ClanInfoService } from 'src/clan-info/clan-info.service';
 import { ClanInfoRepository } from 'src/clan-info/clan-info.repository';
-import { ClanMatchDetailService } from 'src/clan-match-detail/clan-match-detail.service';
 import {
   BattleLogsWithRelation,
   InsertAnyNoneData,
   MatchDetailsWithRelation,
   MatchOneOfClanDetail,
+  MissingClanInsert,
   MissingPlayerInsert,
 } from 'src/commons/dto/game.dto/game.dto';
 import { AllOfDataAfterRefactoring } from 'src/commons/interface/crawling.interface';
-import { NexonUserBattleLogService } from 'src/nexon-user-battle-log/nexon-user-battle-log.service';
 import { NexonUserInfoRepository } from 'src/nexon-user-info/nexon-user-info.repository';
-import { NexonUserInfoService } from 'src/nexon-user-info/nexon-user-info.service';
-import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
 import { GameRepository } from './game.repository';
 import * as dayjs from 'dayjs';
 import { ClanMatchDetailRepository } from 'src/clan-match-detail/clan-match-detail.repository';
 import { NexonUserBattleLogRepository } from 'src/nexon-user-battle-log/nexon-user-battle-log.repository';
-import { NexonUserInsertDb } from 'src/commons/dto/nexon-user-info.dto/nexon-user-info.dto';
 
 @Injectable()
 export class GameService {
@@ -62,7 +57,7 @@ export class GameService {
       (value, index) => userNexonSns.indexOf(value) === index,
     );
 
-    const allClanInfo = matchDetails.flatMap((match) => [
+    const oneOfMatchDetail = matchDetails.flatMap((match) => [
       {
         matchKey: match.matchKey,
         result: match.blueResult === 'win' ? 'blueTeamWin' : 'blueTeamLose',
@@ -91,20 +86,22 @@ export class GameService {
       );
 
       const existsClanInfo = await this.clanInfoRepository.findClanNos(
-        clanInfoNos,
+        nonDpulicateClanInfoNos,
       );
 
       const existsUserInfo =
-        await this.nexonUserInfoRepository.findNexonUserInfos(userNexonSns);
+        await this.nexonUserInfoRepository.findNexonUserInfos(
+          nonDpulicateSnNos,
+        );
 
       if (existsClanInfo.length === 0 && existsUserInfo.length === 0) {
+        // 해당 데이터중 어떠한 클랜도 유저도 존재하지 않는 경우
         return await this.processClanMatchDetails({
           existsGameInfo,
-          matchClanDetails: allClanInfo,
+          matchClanDetails: oneOfMatchDetail,
         });
-      }
-
-      if (
+      } else if (
+        // 클랜은 모두 존재하지만 유저가 모두 존재하지 않는 경우
         existsClanInfo.length === nonDpulicateClanInfoNos.length &&
         existsUserInfo.length !== nonDpulicateSnNos.length
       ) {
@@ -112,8 +109,24 @@ export class GameService {
           existsPlayer: existsUserInfo,
           existsGameInfo,
           existsClan: existsClanInfo,
-          matchInfos: allClanInfo,
+          matchInfos: oneOfMatchDetail,
         });
+      } else if (
+        // 클랜이 모두 존재하지 않지만 유저는 모두 존재하는 경우
+        existsClanInfo.length !== nonDpulicateClanInfoNos.length &&
+        existsUserInfo.length === nonDpulicateSnNos.length
+      ) {
+        return await this.createMissingClan({
+          matchDetails: oneOfMatchDetail,
+          existsClan: existsClanInfo,
+          existsGame: existsGameInfo,
+          existsUser: existsUserInfo,
+        });
+      } else if (
+        // clanInfo와 nexonUserInfo가 존재하긴 하지만 모두 존재하지는 않을 때
+        existsClanInfo.length !== nonDpulicateClanInfoNos.length &&
+        existsUserInfo.length !== nonDpulicateSnNos.length
+      ) {
       }
     } catch (e) {
       throw new HttpException(e.message, 500);
@@ -250,32 +263,131 @@ export class GameService {
     };
   }
 
+  async createMissingClan({
+    matchDetails,
+    existsClan,
+    existsGame,
+    existsUser,
+  }: MissingClanInsert) {
+    const existsClanInfo = [];
+    const newClanInfo = [];
+    const userInfo = [];
+
+    matchDetails.forEach(({ clanNo, result, userList }) => {
+      const dbExistsClan = existsClan.find((c) => c.clanNo === clanNo);
+      if (dbExistsClan) {
+        const existsClanLadder = {
+          id: dbExistsClan.id,
+          ladderPoint: dbExistsClan.ladderPoint,
+        };
+        existsClanLadder.ladderPoint += result.endsWith('Win') ? 15 : -11;
+        existsClanInfo.push(existsClanLadder);
+      } else {
+        const nonExistsClanLadder = {
+          clanNo,
+          ladderPoint: 1000,
+        };
+        nonExistsClanLadder.ladderPoint += result.endsWith('Win') ? 15 : -11;
+        newClanInfo.push(nonExistsClanLadder);
+      }
+
+      userList.forEach((user) => {
+        const dbExistsUser = existsUser.find(
+          (u) => u.userNexonSn === user.userNexonSn,
+        );
+
+        const userLadder = {
+          userNxonSn: dbExistsUser.userNexonSn,
+          ladderPoint: dbExistsUser.ladderPoint,
+        };
+
+        userLadder.ladderPoint += result.endsWith('Win') ? 15 : -11;
+
+        userInfo.push(userLadder);
+      });
+    });
+
+    const [updateLadderExistsClan, createNewClan, updateExistsUserLadderPoint] =
+      await Promise.all([
+        this.clanInfoRepository.updateClanLadder(existsClanInfo),
+        this.clanInfoRepository.createClanInfoNoneDuplicate(newClanInfo),
+        this.nexonUserInfoRepository.existsUsersUpdate(userInfo),
+      ]);
+
+    const allClanInfo = [...updateLadderExistsClan, ...createNewClan];
+
+    const matchDetailsWithRelation = this.matchDetailWithRelation({
+      matchDetails,
+      existsGameInfo: existsGame,
+      clanInfos: allClanInfo,
+    });
+
+    const battleLogs = this.userBattleLogsWithRelation({
+      matchDetails,
+      existsGameInfo: existsGame,
+      existsNexonUser: updateExistsUserLadderPoint,
+    });
+
+    const [createMatchDetails, createUserBattleLogs] = await Promise.all([
+      this.clanMatchDetailRepository.createClanMatchDetail(
+        matchDetailsWithRelation,
+      ),
+      this.nexonUserBattleLogRepository.createMatchDetailsWithUserId(
+        battleLogs,
+      ),
+    ]);
+
+    return {
+      allClanInfo,
+      createMatchDetails,
+      updateExistsUserLadderPoint,
+      createUserBattleLogs,
+    };
+  }
+
   ladderPointAcc(matchDetails: MatchOneOfClanDetail[]) {
     const userLadder = [];
     const clanLadder = [];
 
     matchDetails.forEach(
-      ({ clanNo, result, userList, clanMark1, clanMark2 }) => {
-        const clanLadderPoint = {
-          clanNo,
-          ladderPoint: 1000,
-          clanMark1,
-          clanMark2,
-        };
+      ({ clanName, clanNo, result, userList, clanMark1, clanMark2 }) => {
+        let clanLadderIndex = clanLadder.findIndex(
+          (clan) => clan.clanNo === clanNo,
+        );
 
-        clanLadderPoint.ladderPoint += result.endsWith('Win') ? 15 : -11;
+        if (clanLadderIndex === -1) {
+          clanLadder.push({
+            clanName,
+            clanNo,
+            ladderPoint: 1000,
+            clanMark1,
+            clanMark2,
+          });
 
-        clanLadder.push(clanLadderPoint);
+          clanLadderIndex = clanLadder.length - 1;
+        }
+
+        clanLadder[clanLadderIndex].ladderPoint += result.endsWith('Win')
+          ? 15
+          : -11;
 
         userList.forEach(({ userNexonSn }) => {
-          const userLadderPoint = {
-            userNexonSn,
-            ladderPoint: 1000,
-          };
+          let userLadderIndex = userLadder.findIndex(
+            (user) => user.userNexonSn === userNexonSn,
+          );
 
-          userLadderPoint.ladderPoint += result.endsWith('Win') ? 15 : -11;
+          if (userLadderIndex === -1) {
+            userLadder.push({
+              userNexonSn,
+              ladderPoint: 1000,
+            });
 
-          userLadder.push(userLadderPoint);
+            userLadderIndex = userLadder.length - 1;
+          }
+
+          userLadder[userLadderIndex].ladderPoint += result.endsWith('Win')
+            ? 15
+            : -11;
         });
       },
     );
