@@ -2,11 +2,11 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { ClanInfoRepository } from 'src/clan-info/clan-info.repository';
 import {
   BattleLogsWithRelation,
-  InsertAnyNoneData,
+  CreateClanAndUserDTO,
   MatchDetailsWithRelation,
-  MatchOneOfClanDetail,
-  MissingClanInsert,
-  MissingPlayerInsert,
+  UpdateAndCreateAllMatchData,
+  updateClanAndUserLadderDto,
+  updateLadderPointMissingData,
 } from 'src/commons/dto/game.dto/game.dto';
 import { AllOfDataAfterRefactoring } from 'src/commons/interface/crawling.interface';
 import { NexonUserInfoRepository } from 'src/nexon-user-info/nexon-user-info.repository';
@@ -80,6 +80,8 @@ export class GameService {
       },
     ]);
 
+    console.log('hello');
+
     try {
       const existsGameInfo = await this.gameRepository.insertMatchData(
         gameInfo,
@@ -94,308 +96,246 @@ export class GameService {
           nonDpulicateSnNos,
         );
 
-      if (existsClanInfo.length === 0 && existsUserInfo.length === 0) {
-        // 해당 데이터중 어떠한 클랜도 유저도 존재하지 않는 경우
-        return await this.processClanMatchDetails({
-          existsGameInfo,
-          matchClanDetails: oneOfMatchDetail,
-        });
-      } else if (
-        // 클랜은 모두 존재하지만 유저가 모두 존재하지 않는 경우
-        existsClanInfo.length === nonDpulicateClanInfoNos.length &&
-        existsUserInfo.length !== nonDpulicateSnNos.length
-      ) {
-        return await this.createMissingPlayers({
-          existsPlayer: existsUserInfo,
-          existsGameInfo,
-          existsClan: existsClanInfo,
-          matchInfos: oneOfMatchDetail,
-        });
-      } else if (
-        // 클랜이 모두 존재하지 않지만 유저는 모두 존재하는 경우
-        existsClanInfo.length !== nonDpulicateClanInfoNos.length &&
-        existsUserInfo.length === nonDpulicateSnNos.length
-      ) {
-        return await this.createMissingClan({
+      const { clan, newClan, user, newUser } =
+        this.updateLadderPointInMissingData({
           matchDetails: oneOfMatchDetail,
           existsClan: existsClanInfo,
-          existsGame: existsGameInfo,
           existsUser: existsUserInfo,
         });
-      } else if (
-        // clanInfo와 nexonUserInfo가 존재하긴 하지만 모두 존재하지는 않을 때
-        existsClanInfo.length !== nonDpulicateClanInfoNos.length &&
-        existsUserInfo.length !== nonDpulicateSnNos.length
-      ) {
+
+      if (newUser.length === 0 && newClan.length === 0) {
+        if (clan.length !== 0 || user.length !== 0) {
+          // request update query to database
+          return await this.updateClanAndUserLadder({
+            matchDetails: oneOfMatchDetail,
+            existingClan: clan,
+            existingUser: user,
+            existingGame: existsGameInfo,
+          });
+        }
+      } else if (user.length === 0 && clan.length === 0) {
+        if (newUser.length !== 0 && newClan.length !== 0) {
+          // request create query to database
+          return await this.createClanAndUser({
+            matchDetails: oneOfMatchDetail,
+            newClan,
+            newUser,
+            existingGame: existsGameInfo,
+          });
+        }
+      } else {
+        // mixed case, requires both create and update queries
+        return await this.updateAndCreateAllMatchData({
+          matchDetails: oneOfMatchDetail,
+          existingClan: clan,
+          newClan,
+          existingUser: user,
+          newUser,
+          existingGame: existsGameInfo,
+        });
       }
     } catch (e) {
       throw new HttpException(e.message, 500);
     }
   }
 
-  async processClanMatchDetails({
-    existsGameInfo,
-    matchClanDetails,
-  }: InsertAnyNoneData) {
-    const { userLadder, clanLadder } = this.ladderPointAcc(matchClanDetails);
-
-    const createClanInfos =
-      await this.clanInfoRepository.createClanInfoNoneDuplicate(clanLadder);
+  async updateClanAndUserLadder({
+    matchDetails,
+    existingClan,
+    existingUser,
+    existingGame,
+  }: updateClanAndUserLadderDto) {
+    const [updateUserLadderPoint, updateClanLadderPoint] = await Promise.all([
+      await this.nexonUserInfoRepository.existsUsersUpdate(existingUser),
+      await this.clanInfoRepository.updateClanLadder(existingClan),
+    ]);
 
     const matchDetailsWithRelation = this.matchDetailWithRelation({
-      matchDetails: matchClanDetails,
-      existsGameInfo,
-      clanInfos: createClanInfos,
+      matchDetails,
+      existsGameInfo: existingGame,
+      clanInfos: updateClanLadderPoint,
     });
 
-    const createMatchResults =
+    const battleLogs = this.userBattleLogsWithRelation({
+      matchDetails: matchDetails,
+      existsGameInfo: existingGame,
+      existsNexonUser: updateUserLadderPoint,
+    });
+
+    const [createMatchDetails, createBattleLogs] = await Promise.all([
       await this.clanMatchDetailRepository.createClanMatchDetail(
         matchDetailsWithRelation,
-      );
-
-    const nexonUsers = await this.nexonUserInfoRepository.createAllNexonUser(
-      userLadder,
-    );
-
-    const battleLogs = this.userBattleLogsWithRelation({
-      matchDetails: matchClanDetails,
-      existsGameInfo,
-      existsNexonUser: nexonUsers,
-    });
-
-    const createUserBattleLogs =
+      ),
       await this.nexonUserBattleLogRepository.createMatchDetailsWithUserId(
         battleLogs,
-      );
+      ),
+    ]);
 
     return {
-      existsGameInfo,
-      createClanInfos,
-      createMatchResults,
-      nexonUsers,
-      createUserBattleLogs,
+      existingGame,
+      updateClanLadderPoint,
+      createMatchDetails,
+      updateUserLadderPoint,
+      createBattleLogs,
     };
   }
 
-  async createMissingPlayers({
-    existsPlayer,
-    existsGameInfo,
-    existsClan,
-    matchInfos,
-  }: MissingPlayerInsert) {
-    const existingUsers = [];
-    const newUsers = [];
-    const existsClanLadder = [];
-
-    matchInfos.forEach(({ userList, result, clanNo }) => {
-      const clan = existsClan.find((clan) => clan.clanNo === clanNo);
-
-      const clanLadder = {
-        id: clan.id,
-        ladderPoint: clan.ladderPoint,
-      };
-
-      clanLadder.ladderPoint += result.endsWith('Win') ? 15 : -11;
-
-      existsClanLadder.push(clanLadder);
-
-      userList.forEach((user) => {
-        const findUser = existsPlayer.find(
-          (u) => u.userNexonSn === user.userNexonSn,
-        );
-
-        if (findUser) {
-          const updatedUser = {
-            userNexonSn: findUser.userNexonSn,
-            ladderPoint: findUser.ladderPoint,
-          };
-
-          updatedUser.ladderPoint += result.endsWith('Win') ? 15 : -11;
-
-          existingUsers.push(updatedUser);
-        } else {
-          const newUser = {
-            userNexonSn: user.userNexonSn,
-            ladderPoint: 1000,
-          };
-
-          newUser.ladderPoint += result.endsWith('Win') ? 15 : -11;
-
-          newUsers.push(newUser);
-        }
-      });
-    });
-
-    const [updateLadderExistsClan, updateExistsUserLadderPoint, createNewUser] =
-      await Promise.all([
-        this.clanInfoRepository.updateClanLadder(existsClanLadder),
-        this.nexonUserInfoRepository.existsUsersUpdate(existingUsers),
-        this.nexonUserInfoRepository.createAllNexonUser(newUsers),
-      ]);
-
-    const allUsers = [...updateExistsUserLadderPoint, ...createNewUser];
+  async createClanAndUser({
+    matchDetails,
+    newClan,
+    newUser,
+    existingGame,
+  }: CreateClanAndUserDTO) {
+    const [createUser, createClan] = await Promise.all([
+      await this.nexonUserInfoRepository.createAllNexonUser(newUser),
+      await this.clanInfoRepository.createClanInfoNoneDuplicate(newClan),
+    ]);
 
     const matchDetailsWithRelation = this.matchDetailWithRelation({
-      matchDetails: matchInfos,
-      existsGameInfo,
-      clanInfos: updateLadderExistsClan,
+      matchDetails,
+      existsGameInfo: existingGame,
+      clanInfos: createClan,
     });
 
     const battleLogs = this.userBattleLogsWithRelation({
-      matchDetails: matchInfos,
-      existsGameInfo,
-      existsNexonUser: allUsers,
+      matchDetails: matchDetails,
+      existsGameInfo: existingGame,
+      existsNexonUser: createUser,
     });
 
-    const [createMatchDetails, createUserBattleLogs] = await Promise.all([
-      this.clanMatchDetailRepository.createClanMatchDetail(
+    const [createMatchDetails, createBattleLogs] = await Promise.all([
+      await this.clanMatchDetailRepository.createClanMatchDetail(
         matchDetailsWithRelation,
       ),
-      this.nexonUserBattleLogRepository.createMatchDetailsWithUserId(
+      await this.nexonUserBattleLogRepository.createMatchDetailsWithUserId(
         battleLogs,
       ),
     ]);
 
     return {
-      allUsers,
+      existingGame,
+      createClan,
       createMatchDetails,
-      createUserBattleLogs,
+      createUser,
+      createBattleLogs,
     };
   }
 
-  async createMissingClan({
+  async updateAndCreateAllMatchData({
+    matchDetails,
+    existingClan,
+    newClan,
+    existingUser,
+    newUser,
+    existingGame,
+  }: UpdateAndCreateAllMatchData) {
+    const [createClan, updateClan, createUser, updateUser] = await Promise.all([
+      await this.clanInfoRepository.updateClanLadder(existingClan),
+      await this.clanInfoRepository.createClanInfoNoneDuplicate(newClan),
+      await this.nexonUserInfoRepository.existsUsersUpdate(existingUser),
+      await this.nexonUserInfoRepository.createAllNexonUser(newUser),
+    ]);
+
+    const allClan = [...createClan, ...updateClan];
+    const allUser = [...createUser, ...updateUser];
+
+    const matchDetailsWithRelation = this.matchDetailWithRelation({
+      matchDetails,
+      existsGameInfo: existingGame,
+      clanInfos: allClan,
+    });
+
+    const battleLogs = this.userBattleLogsWithRelation({
+      matchDetails: matchDetails,
+      existsGameInfo: existingGame,
+      existsNexonUser: allUser,
+    });
+
+    const [createMatchDetails, createBattleLogs] = await Promise.all([
+      await this.clanMatchDetailRepository.createClanMatchDetail(
+        matchDetailsWithRelation,
+      ),
+      await this.nexonUserBattleLogRepository.createMatchDetailsWithUserId(
+        battleLogs,
+      ),
+    ]);
+
+    return {
+      existingGame,
+      allClan,
+      createMatchDetails,
+      allUser,
+      createBattleLogs,
+    };
+  }
+
+  updateLadderPointInMissingData({
     matchDetails,
     existsClan,
-    existsGame,
     existsUser,
-  }: MissingClanInsert) {
-    const existsClanInfo = [];
-    const newClanInfo = [];
-    const userInfo = [];
-
-    matchDetails.forEach(({ clanNo, result, userList }) => {
-      const dbExistsClan = existsClan.find((c) => c.clanNo === clanNo);
-      if (dbExistsClan) {
-        const existsClanLadder = {
-          id: dbExistsClan.id,
-          ladderPoint: dbExistsClan.ladderPoint,
-        };
-        existsClanLadder.ladderPoint += result.endsWith('Win') ? 15 : -11;
-        existsClanInfo.push(existsClanLadder);
-      } else {
-        const nonExistsClanLadder = {
-          clanNo,
-          ladderPoint: 1000,
-        };
-        nonExistsClanLadder.ladderPoint += result.endsWith('Win') ? 15 : -11;
-        newClanInfo.push(nonExistsClanLadder);
-      }
-
-      userList.forEach((user) => {
-        const dbExistsUser = existsUser.find(
-          (u) => u.userNexonSn === user.userNexonSn,
-        );
-
-        const userLadder = {
-          userNxonSn: dbExistsUser.userNexonSn,
-          ladderPoint: dbExistsUser.ladderPoint,
-        };
-
-        userLadder.ladderPoint += result.endsWith('Win') ? 15 : -11;
-
-        userInfo.push(userLadder);
-      });
-    });
-
-    const [updateLadderExistsClan, createNewClan, updateExistsUserLadderPoint] =
-      await Promise.all([
-        this.clanInfoRepository.updateClanLadder(existsClanInfo),
-        this.clanInfoRepository.createClanInfoNoneDuplicate(newClanInfo),
-        this.nexonUserInfoRepository.existsUsersUpdate(userInfo),
-      ]);
-
-    const allClanInfo = [...updateLadderExistsClan, ...createNewClan];
-
-    const matchDetailsWithRelation = this.matchDetailWithRelation({
-      matchDetails,
-      existsGameInfo: existsGame,
-      clanInfos: allClanInfo,
-    });
-
-    const battleLogs = this.userBattleLogsWithRelation({
-      matchDetails,
-      existsGameInfo: existsGame,
-      existsNexonUser: updateExistsUserLadderPoint,
-    });
-
-    const [createMatchDetails, createUserBattleLogs] = await Promise.all([
-      this.clanMatchDetailRepository.createClanMatchDetail(
-        matchDetailsWithRelation,
-      ),
-      this.nexonUserBattleLogRepository.createMatchDetailsWithUserId(
-        battleLogs,
-      ),
-    ]);
-
-    return {
-      allClanInfo,
-      createMatchDetails,
-      updateExistsUserLadderPoint,
-      createUserBattleLogs,
-    };
-  }
-
-  ladderPointAcc(matchDetails: MatchOneOfClanDetail[]) {
-    const userLadder = [];
-    const clanLadder = [];
+  }: updateLadderPointMissingData) {
+    const clan = [];
+    const newClan = [];
+    const user = [];
+    const newUser = [];
 
     matchDetails.forEach(
       ({ clanName, clanNo, result, userList, clanMark1, clanMark2 }) => {
-        let clanLadderIndex = clanLadder.findIndex(
-          (clan) => clan.clanNo === clanNo,
+        const ladderPoint = result.endsWith('Win') ? 15 : -11;
+
+        const existingClanIndex = existsClan.findIndex(
+          (c) => c.clanNo === clanNo,
         );
 
-        if (clanLadderIndex === -1) {
-          clanLadder.push({
-            clanName,
-            clanNo,
-            ladderPoint: 1000,
-            clanMark1,
-            clanMark2,
-          });
+        if (existingClanIndex !== -1) {
+          const existingClan = existsClan[existingClanIndex];
+          existingClan.ladderPoint += ladderPoint;
+          clan.push(existingClan);
+        } else {
+          let newClanIndex = newClan.findIndex((c) => c.clanNo === clanNo);
 
-          clanLadderIndex = clanLadder.length - 1;
-        }
-
-        clanLadder[clanLadderIndex].ladderPoint += result.endsWith('Win')
-          ? 15
-          : -11;
-
-        userList.forEach(({ userNexonSn }) => {
-          let userLadderIndex = userLadder.findIndex(
-            (user) => user.userNexonSn === userNexonSn,
-          );
-
-          if (userLadderIndex === -1) {
-            userLadder.push({
-              userNexonSn,
+          if (newClanIndex === -1) {
+            newClan.push({
+              clanName,
+              clanNo,
+              clanMark1,
+              clanMark2,
               ladderPoint: 1000,
             });
 
-            userLadderIndex = userLadder.length - 1;
+            newClanIndex = newClan.length - 1;
           }
+          newClan[newClanIndex].ladderPoint += ladderPoint;
+        }
 
-          userLadder[userLadderIndex].ladderPoint += result.endsWith('Win')
-            ? 15
-            : -11;
+        userList.forEach(({ userNexonSn }) => {
+          const existsUserIndex = existsUser.findIndex(
+            (u) => u.userNexonSn === userNexonSn,
+          );
+
+          if (existsUserIndex !== -1) {
+            const existingUser = existsUser[existsUserIndex];
+            existingUser.ladderPoint += ladderPoint;
+            user.push(existingUser);
+          } else {
+            let newUserIndex = newUser.findIndex(
+              (u) => u.userNexonSn === userNexonSn,
+            );
+
+            if (newUserIndex === -1) {
+              newUser.push({
+                userNexonSn,
+                ladderPoint: 1000,
+              });
+              newUserIndex = newUser.length - 1;
+            }
+            newUser[newUserIndex].ladderPoint += ladderPoint;
+          }
         });
       },
     );
 
-    return {
-      userLadder,
-      clanLadder,
-    };
+    return { clan, newClan, user, newUser };
   }
 
   matchDetailWithRelation({

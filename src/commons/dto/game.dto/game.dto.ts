@@ -2,30 +2,39 @@ import { ClanInfo } from 'src/clan-info/table/clan-info.entity';
 import { Game } from 'src/game/table/game.entity';
 import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
 import { NexonUserDetails } from '../clan-info.dto/clan-info.dto';
-
-export class InsertAnyNoneData {
-  existsGameInfo: Game[];
-  matchClanDetails: MatchOneOfClanDetail[];
+export class updateLadderPointMissingData {
+  matchDetails: MatchOneOfClanDetail[];
+  existsClan: ClanInfo[];
+  existsUser: NexonUserInfo[];
 }
 
-export class MissingPlayerInsert {
-  existsPlayer: NexonUserInfo[];
-  existsGameInfo: Game[];
-  existsClan: ClanInfo[];
-  matchInfos: MatchOneOfClanDetail[];
+export class updateClanAndUserLadderDto {
+  matchDetails: MatchOneOfClanDetail[];
+  existingClan: ClanInfo[];
+  existingUser: NexonUserInfo[];
+  existingGame: Game[];
+}
+
+export class CreateClanAndUserDTO {
+  matchDetails: MatchOneOfClanDetail[];
+  newClan: ClanInfo[];
+  newUser: NexonUserInfo[];
+  existingGame: Game[];
+}
+
+export class UpdateAndCreateAllMatchData {
+  matchDetails: MatchOneOfClanDetail[];
+  existingClan: ClanInfo[];
+  newClan: ClanInfo[];
+  existingUser: NexonUserInfo[];
+  newUser: NexonUserInfo[];
+  existingGame: Game[];
 }
 
 export class BattleLogsWithRelation {
   matchDetails: MatchOneOfClanDetail[];
   existsGameInfo: Game[];
   existsNexonUser: NexonUserInfo[];
-}
-
-export class MissingClanInsert {
-  matchDetails: MatchOneOfClanDetail[];
-  existsClan: ClanInfo[];
-  existsGame: Game[];
-  existsUser: NexonUserInfo[];
 }
 
 export class MatchDetailsWithRelation {
