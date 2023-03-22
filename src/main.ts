@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './commons/filters';
+import { json } from 'body-parser';
 import { setupSwagger } from './commons/utils';
 
 async function bootstrap() {
@@ -24,6 +25,7 @@ async function bootstrap() {
   );
 
   setupSwagger(app);
+  app.use(json({ limit: '10mb' }));
   app.enableCors();
   app.useGlobalFilters(new HttpExceptionFilter());
 

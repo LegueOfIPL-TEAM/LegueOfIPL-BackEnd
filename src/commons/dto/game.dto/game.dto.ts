@@ -31,10 +31,11 @@ export class UpdateAndCreateAllMatchData {
   existingGame: Game[];
 }
 
-export class BattleLogsWithRelation {
+export class BattleLogsAndMatchDetailWithRelation {
   matchDetails: MatchOneOfClanDetail[];
   existsGameInfo: Game[];
   existsNexonUser: NexonUserInfo[];
+  existingClan: ClanInfo[];
 }
 
 export class MatchDetailsWithRelation {

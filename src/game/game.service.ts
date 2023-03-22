@@ -1,9 +1,8 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { ClanInfoRepository } from 'src/clan-info/clan-info.repository';
 import {
-  BattleLogsWithRelation,
+  BattleLogsAndMatchDetailWithRelation,
   CreateClanAndUserDTO,
-  MatchDetailsWithRelation,
   UpdateAndCreateAllMatchData,
   updateClanAndUserLadderDto,
   updateLadderPointMissingData,
@@ -80,8 +79,6 @@ export class GameService {
       },
     ]);
 
-    console.log('hello');
-
     try {
       const existsGameInfo = await this.gameRepository.insertMatchData(
         gameInfo,
@@ -150,26 +147,13 @@ export class GameService {
       await this.clanInfoRepository.updateClanLadder(existingClan),
     ]);
 
-    const matchDetailsWithRelation = this.matchDetailWithRelation({
-      matchDetails,
-      existsGameInfo: existingGame,
-      clanInfos: updateClanLadderPoint,
-    });
-
-    const battleLogs = this.userBattleLogsWithRelation({
-      matchDetails: matchDetails,
-      existsGameInfo: existingGame,
-      existsNexonUser: updateUserLadderPoint,
-    });
-
-    const [createMatchDetails, createBattleLogs] = await Promise.all([
-      await this.clanMatchDetailRepository.createClanMatchDetail(
-        matchDetailsWithRelation,
-      ),
-      await this.nexonUserBattleLogRepository.createMatchDetailsWithUserId(
-        battleLogs,
-      ),
-    ]);
+    const { createMatchDetails, createBattleLogs } =
+      await this.battleLogAndMatchDetailWithRelation({
+        matchDetails,
+        existsGameInfo: existingGame,
+        existsNexonUser: existingUser,
+        existingClan,
+      });
 
     return {
       existingGame,
@@ -191,26 +175,13 @@ export class GameService {
       await this.clanInfoRepository.createClanInfoNoneDuplicate(newClan),
     ]);
 
-    const matchDetailsWithRelation = this.matchDetailWithRelation({
-      matchDetails,
-      existsGameInfo: existingGame,
-      clanInfos: createClan,
-    });
-
-    const battleLogs = this.userBattleLogsWithRelation({
-      matchDetails: matchDetails,
-      existsGameInfo: existingGame,
-      existsNexonUser: createUser,
-    });
-
-    const [createMatchDetails, createBattleLogs] = await Promise.all([
-      await this.clanMatchDetailRepository.createClanMatchDetail(
-        matchDetailsWithRelation,
-      ),
-      await this.nexonUserBattleLogRepository.createMatchDetailsWithUserId(
-        battleLogs,
-      ),
-    ]);
+    const { createMatchDetails, createBattleLogs } =
+      await this.battleLogAndMatchDetailWithRelation({
+        matchDetails,
+        existsGameInfo: existingGame,
+        existsNexonUser: createUser,
+        existingClan: createClan,
+      });
 
     return {
       existingGame,
@@ -239,26 +210,13 @@ export class GameService {
     const allClan = [...createClan, ...updateClan];
     const allUser = [...createUser, ...updateUser];
 
-    const matchDetailsWithRelation = this.matchDetailWithRelation({
-      matchDetails,
-      existsGameInfo: existingGame,
-      clanInfos: allClan,
-    });
-
-    const battleLogs = this.userBattleLogsWithRelation({
-      matchDetails: matchDetails,
-      existsGameInfo: existingGame,
-      existsNexonUser: allUser,
-    });
-
-    const [createMatchDetails, createBattleLogs] = await Promise.all([
-      await this.clanMatchDetailRepository.createClanMatchDetail(
-        matchDetailsWithRelation,
-      ),
-      await this.nexonUserBattleLogRepository.createMatchDetailsWithUserId(
-        battleLogs,
-      ),
-    ]);
+    const { createMatchDetails, createBattleLogs } =
+      await this.battleLogAndMatchDetailWithRelation({
+        matchDetails,
+        existsGameInfo: existingGame,
+        existsNexonUser: allUser,
+        existingClan: allClan,
+      });
 
     return {
       existingGame,
@@ -338,41 +296,32 @@ export class GameService {
     return { clan, newClan, user, newUser };
   }
 
-  matchDetailWithRelation({
-    matchDetails,
-    existsGameInfo,
-    clanInfos,
-  }: MatchDetailsWithRelation) {
-    const matchResults = matchDetails
-      .map(({ matchKey, clanNo, result }) => {
-        const game = existsGameInfo.find((g) => g.matchKey === matchKey);
-        const clan = clanInfos.find((c) => c.clanNo === clanNo);
-        return game && clan
-          ? {
-              gameId: game.id,
-              clanId: clan.id,
-              isRedTeam: result.includes('redTeam'),
-              isBlueTeam: result.includes('blueTeam'),
-              result: result.endsWith('Win'),
-            }
-          : null;
-      })
-      .filter(Boolean);
-
-    return matchResults;
-  }
-
-  userBattleLogsWithRelation({
+  async battleLogAndMatchDetailWithRelation({
     matchDetails,
     existsGameInfo,
     existsNexonUser,
-  }: BattleLogsWithRelation) {
-    const battleLogs = matchDetails.flatMap(({ matchKey, userList }) => {
+    existingClan,
+  }: BattleLogsAndMatchDetailWithRelation) {
+    const battleLogs = [];
+    const matchDetailsWithRelation = [];
+    matchDetails.forEach(({ matchKey, userList, clanNo, result }) => {
       const gameId = existsGameInfo.find((g) => g.matchKey === matchKey)?.id;
-      if (!gameId) {
+      const clan = existingClan.find((c) => c.clanNo === clanNo);
+      if (!gameId && !clan) {
         return [];
       }
-      return userList.map(
+
+      const matchDetail = {
+        gameId,
+        clanId: clan.id,
+        isRedTeam: result.includes('redTeam'),
+        isBlueTeam: result.includes('blueTeam'),
+        result: result.endsWith('Win'),
+      };
+
+      matchDetailsWithRelation.push(matchDetail);
+
+      userList.map(
         ({
           nickname,
           userNexonSn,
@@ -387,7 +336,7 @@ export class GameService {
             (u) => u.userNexonSn === userNexonSn,
           )!.id;
 
-          const response = {
+          battleLogs.push({
             gameId,
             nexonUserId,
             nickname,
@@ -397,12 +346,20 @@ export class GameService {
             damage,
             grade,
             weapon,
-          };
-
-          return response;
+          });
         },
       );
     });
-    return battleLogs;
+
+    const [createMatchDetails, createBattleLogs] = await Promise.all([
+      await this.clanMatchDetailRepository.createClanMatchDetail(
+        matchDetailsWithRelation,
+      ),
+      await this.nexonUserBattleLogRepository.createMatchDetailsWithUserId(
+        battleLogs,
+      ),
+    ]);
+
+    return { createMatchDetails, createBattleLogs };
   }
 }
