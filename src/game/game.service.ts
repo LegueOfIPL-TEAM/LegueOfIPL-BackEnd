@@ -25,14 +25,23 @@ export class GameService {
   ) {}
 
   async insertMatchData(matchDetails: AllOfDataAfterRefactoring[]) {
-    const gameInfo = matchDetails.flatMap((match) => [
-      {
-        matchKey: match.matchKey,
-        mapName: match.mapName,
-        matchTime: dayjs(match.matchTime, 'YYYY.MM.DD (HH:mm)').toDate(),
-        plimit: match.plimit,
+    const gameInfo = matchDetails.map(
+      ({ matchKey, mapName, matchTime, plimit }) => {
+        const formatString = 'YYYY.MM.DD (HH:mm)';
+        const parsedDate = dayjs(
+          matchTime.replace('(', '').replace(')', ''),
+          formatString,
+        );
+        const formattedDate = parsedDate.format('YYYY-MM-DD HH:mm:ss');
+
+        return {
+          matchKey,
+          mapName,
+          matchTime: formattedDate,
+          plimit,
+        };
       },
-    ]);
+    );
 
     // user Array
     const nexonUsers = matchDetails

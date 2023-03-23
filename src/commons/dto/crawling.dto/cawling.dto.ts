@@ -16,7 +16,7 @@ export class getMatchDetails {
   redClanNo: string;
   winTeamName: string;
   loseTeamName: string;
-  matchTime: Date;
+  matchTime: string;
   redUserList: Players[];
   blueUserList: Players[];
 }
