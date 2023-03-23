@@ -1,15 +1,17 @@
 export interface AllOfDataAfterRefactoring {
-  matchKey: number;
-  matchTime: Date;
+  matchKey: string;
+  matchTime: string;
   mapName: string;
   matchName: string;
   plimit: string;
   redResult: string;
+  redClanNo: string;
   redClanName: string;
   redClanMark1: string;
   redClanMark2: string;
   redUserList: Player[];
   blueResult: string;
+  blueClanNo: string;
   blueClanName: string;
   blueClanMark1: string;
   blueClanMark2: string;
@@ -71,7 +73,7 @@ export interface Player {
   kill: number;
   death: number;
   assist: number;
-  damage: number;
+  damage: string;
   grade: string;
   weapon: string;
 }

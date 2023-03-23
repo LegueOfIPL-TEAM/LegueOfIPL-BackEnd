@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
-
 import { enviroment } from 'src/commons/enviroment';
 import {
   getManyMatchListAndUrls,
-  getMatchDetails,
   GameLogs,
   AllUserInMatch,
   AllOfDataAfterRefactoring,
@@ -11,7 +9,7 @@ import {
 import {
   AllOfDataBeforRefactoring,
   BattleLogs,
-} from 'src/commons/dto/cawling.dto';
+} from 'src/commons/dto/crawling.dto/cawling.dto';
 
 @Injectable()
 export class CrawlingService {
@@ -315,11 +313,13 @@ export class CrawlingService {
         matchName,
         plimit: '5vs5',
         blueResult: matchDetails[index]['blueResult'],
+        blueClanNo: matchDetails[index]['blueClanNo'],
         blueClanName,
         blueClanMark1,
         blueClanMark2,
         blueUserList: battleLogs[index]['winnerTeam'],
         redResult: matchDetails[index]['redResult'],
+        redClanNo: matchDetails[index]['redClanNo'],
         redClanName,
         redClanMark1,
         redClanMark2,
@@ -365,7 +365,7 @@ export class CrawlingService {
             kill: 0,
             death: 0,
             assist: 0,
-            damage: 0,
+            damage: '0',
             grade: '',
             weapon: weapon === 'rifle' || weapon === 'sniper' ? weapon : null,
           };
@@ -382,7 +382,7 @@ export class CrawlingService {
             kill: 0,
             death: 0,
             assist: 0,
-            damage: 0,
+            damage: '0',
             grade: '',
             weapon:
               targetWeapon === 'rifle' || targetWeapon === 'sniper'
