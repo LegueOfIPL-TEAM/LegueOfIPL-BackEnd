@@ -1,7 +1,13 @@
 import { Sequelize } from 'sequelize-typescript';
-import { Board } from '../table/board.model';
+import { Board } from '../../board/table/board.model';
 import { SEQUELIZE, DEVELOPMENT, TEST, PRODUCTION } from '../constants';
 import { databaseConfig } from './database.config';
+import { Game } from 'src/game/table/game.entity';
+import { ClanInfo } from 'src/clan-info/table/clan-info.entity';
+import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
+import { NexonUserBattleLog } from 'src/nexon-user-battle-log/table/nexon-user-battle-log.entitiy';
+import { ClanMatchDetail } from 'src/clan-match-detail/table/clan-match-detail.entity';
+import { Logger } from '@nestjs/common';
 
 export const databaseProviders = [
   {
@@ -17,7 +23,7 @@ export const databaseProviders = [
             host: process.env.DB_HOST,
             port: process.env.DB_PORT,
             dialect: process.env.DB_DIALECT,
-          }
+          };
           break;
         case TEST:
           config = {
@@ -26,8 +32,8 @@ export const databaseProviders = [
             database: process.env.DB_NAME_TEST,
             host: process.env.DB_HOST,
             port: process.env.DB_PORT,
-            dialect: process.env.DB_DIALECT
-          }
+            dialect: process.env.DB_DIALECT,
+          };
           break;
         case PRODUCTION:
           config = {
@@ -35,16 +41,29 @@ export const databaseProviders = [
             password: process.env.DB_PASS,
             database: process.env.DB_NAME_PRODUCTION,
             host: process.env.DB_HOST,
-            dialect: process.env.DB_DIALECT
-          }
+            dialect: process.env.DB_DIALECT,
+          };
           break;
         default:
           config = databaseConfig.development;
       }
-      const sequelize = new Sequelize(config);
-      sequelize.addModels([Board]);
-      await sequelize.sync();
-      return sequelize;
+      try {
+        const sequelize = new Sequelize(config);
+        sequelize.addModels([
+          Board,
+          Game,
+          ClanInfo,
+          NexonUserInfo,
+          NexonUserBattleLog,
+          ClanMatchDetail,
+        ]);
+        await sequelize.authenticate();
+        Logger.log('Connection has been established successfully.');
+        await sequelize.sync({ force: true });
+        return sequelize;
+      } catch (err) {
+        Logger.error('Unable to connect to the database:', err);
+      }
     },
   },
 ];

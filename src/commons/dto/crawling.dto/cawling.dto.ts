@@ -9,14 +9,14 @@ export class FirstRefactoringBattleLogs {
   loseTeam: UserList[];
 }
 export class getMatchDetails {
-  matchKey: number;
+  matchKey: string;
   blueResult: string;
   blueClanNo: string;
   redResult: string;
   redClanNo: string;
   winTeamName: string;
   loseTeamName: string;
-  matchTime: Date;
+  matchTime: string;
   redUserList: Players[];
   blueUserList: Players[];
 }
@@ -49,7 +49,7 @@ export class UserList {
   kill: number;
   death: number;
   assist: number;
-  damage: number;
+  damage: string;
   grade: string;
   weapon: string;
 }
@@ -59,6 +59,6 @@ export class Players {
   kill: number;
   death: number;
   assist: number;
-  damage: number;
+  damage: string;
   grade: string;
 }
