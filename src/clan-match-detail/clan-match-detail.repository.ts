@@ -1,12 +1,5 @@
-import {
-  ConsoleLogger,
-  HttpException,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
-import { MatchDetails } from 'src/commons/dto/clan-info.dto/clan-info.dto';
+import { Inject, Injectable } from '@nestjs/common';
 import { MatchDetailsInResult } from 'src/commons/dto/clan-match-detail.dto/clan-match-detil.dto';
-import { AllOfDataAfterRefactoring } from 'src/commons/interface/crawling.interface';
 import { ClAN_MATCH_DETAIL } from 'src/core/constants';
 import { ClanMatchDetail } from './table/clan-match-detail.entity';
 

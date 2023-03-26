@@ -1,22 +1,11 @@
-import {
-  ConsoleLogger,
-  HttpException,
-  Inject,
-  Injectable,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CLAN_INFO } from 'src/core/constants';
 import { ClanInfo } from './table/clan-info.entity';
 import {
   MatchDetails,
-  findManyclanNo,
-  NexonClanInfoDetails,
   UpdateLadderPoint,
 } from 'src/commons/dto/clan-info.dto/clan-info.dto';
-import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
-import { InjectConnection, InjectModel } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize';
-import { LookupAddress } from 'dns';
 
 @Injectable()
 export class ClanInfoRepository {
@@ -154,5 +143,11 @@ export class ClanInfoRepository {
 
     const waitArray = await Promise.all(response);
     return waitArray.flat();
+  }
+
+  async findClanRank() {
+    return await this.clanInfoEntitiy.findAll({
+      order: [['ladderPoint', 'DESC']],
+    });
   }
 }

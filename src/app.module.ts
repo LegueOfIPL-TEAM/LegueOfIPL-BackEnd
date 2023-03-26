@@ -9,6 +9,7 @@ import { NexonUserBattleLogModule } from './nexon-user-battle-log/nexon-user-bat
 import { ClanInfoModule } from './clan-info/clan-info.module';
 import { ClanMatchDetailModule } from './clan-match-detail/clan-match-detail.module';
 import { NexonUserInfoModule } from './nexon-user-info/nexon-user-info.module';
+import { RankModule } from './rank/rank.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { NexonUserInfoModule } from './nexon-user-info/nexon-user-info.module';
     ClanInfoModule,
     ClanMatchDetailModule,
     NexonUserInfoModule,
+    RankModule,
   ],
 })
 export class AppModule {}

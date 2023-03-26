@@ -61,4 +61,11 @@ export class NexonUserInfoRepository {
 
     return waitArray.flat();
   }
+
+  async nexonUserRank() {
+    return await this.nexonUserInfoModel.findAll({
+      order: [['ladderPoint', 'DESC']],
+      limit: 20,
+    });
+  }
 }
