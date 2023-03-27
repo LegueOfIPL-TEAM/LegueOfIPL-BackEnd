@@ -14,6 +14,7 @@ import { ClanMatchDetail } from '../clan-match-detail/table/clan-match-detail.en
 import { AllOfDataAfterRefactoring } from 'src/commons/interface/crawling.interface';
 import * as dayjs from 'dayjs';
 import { GameDetails } from 'src/commons/dto/game.dto/game.dto';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class GameRepository {
@@ -49,5 +50,26 @@ export class GameRepository {
     });
 
     return findAllMatchKeysInGame;
+  }
+
+  async clanDetail(clanId: number) {
+    return await this.gameEntity.findAll({
+      include: [
+        {
+          model: ClanMatchDetail,
+          include: [
+            {
+              model: ClanInfo,
+              where: { id: clanId },
+            },
+            {
+              model: NexonUserBattleLog,
+              include: [NexonUserInfo],
+            },
+          ],
+        },
+      ],
+      limit: 10,
+    });
   }
 }

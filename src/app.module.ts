@@ -10,6 +10,7 @@ import { ClanInfoModule } from './clan-info/clan-info.module';
 import { ClanMatchDetailModule } from './clan-match-detail/clan-match-detail.module';
 import { NexonUserInfoModule } from './nexon-user-info/nexon-user-info.module';
 import { RankModule } from './rank/rank.module';
+import { LegueModule } from './legue/legue.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { RankModule } from './rank/rank.module';
     ClanMatchDetailModule,
     NexonUserInfoModule,
     RankModule,
+    LegueModule,
   ],
 })
 export class AppModule {}
