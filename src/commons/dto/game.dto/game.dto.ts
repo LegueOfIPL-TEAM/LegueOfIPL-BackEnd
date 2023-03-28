@@ -59,5 +59,4 @@ export class MatchOneOfClanDetail {
   clanMark1: string;
   clanMark2: string;
   userList: NexonUserDetails[];
-  targetClanNo: string;
 }

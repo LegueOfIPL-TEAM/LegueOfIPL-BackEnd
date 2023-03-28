@@ -9,7 +9,9 @@ export class ClanMatchDetailRepository {
     @Inject(ClAN_MATCH_DETAIL)
     private clanMatchDetailModel: typeof ClanMatchDetail,
   ) {}
-  async createClanMatchDetail(clanMatchDetails: MatchDetailsInResult[]) {
+  async createClanMatchDetail(
+    clanMatchDetails: ClanMatchDetail[],
+  ): Promise<ClanMatchDetail[]> {
     const response = clanMatchDetails.map(
       async ({ isRedTeam, isBlueTeam, result, gameId, clanId }) => {
         const createMatchResult = await this.clanMatchDetailModel.bulkCreate([

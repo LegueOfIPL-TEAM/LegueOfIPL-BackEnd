@@ -74,7 +74,6 @@ export class GameService {
         clanMark1: match.blueClanMark1,
         clanMark2: match.blueClanMark2,
         userList: match.blueUserList,
-        targetClanNo: match.redClanNo,
       },
       {
         matchKey: match.matchKey,
@@ -84,7 +83,6 @@ export class GameService {
         clanMark1: match.redClanMark1,
         clanMark2: match.redClanMark2,
         userList: match.redUserList,
-        targetClanNo: match.blueClanNo,
       },
     ]);
 
@@ -345,9 +343,12 @@ export class GameService {
             (u) => u.userNexonSn === userNexonSn,
           )!.id;
 
+          console.log(gameId);
           battleLogs.push({
             gameId,
             nexonUserId,
+            isRedTeam: result.includes('redTeam'),
+            isBlueTeam: result.includes('blueTeam'),
             nickname,
             kill,
             death,
@@ -355,19 +356,37 @@ export class GameService {
             damage,
             grade,
             weapon,
+            matchId: null,
           });
         },
       );
     });
 
-    const [createMatchDetails, createBattleLogs] = await Promise.all([
+    const createMatchDetails =
       await this.clanMatchDetailRepository.createClanMatchDetail(
         matchDetailsWithRelation,
-      ),
+      );
+
+    const updatedBattleLogs = battleLogs.map(
+      ({ isBlueTeam, isRedTeam, gameId, matchId, ...rest }) => {
+        const findMatchId = createMatchDetails.find(
+          (match) =>
+            match.gameId === gameId &&
+            match.isRedTeam === isRedTeam &&
+            match.isBlueTeam === isBlueTeam,
+        )?.id;
+        return {
+          gameId,
+          ...rest,
+          matchId: findMatchId,
+        };
+      },
+    );
+
+    const createBattleLogs =
       await this.nexonUserBattleLogRepository.createMatchDetailsWithUserId(
-        battleLogs,
-      ),
-    ]);
+        updatedBattleLogs,
+      );
 
     return { createMatchDetails, createBattleLogs };
   }
