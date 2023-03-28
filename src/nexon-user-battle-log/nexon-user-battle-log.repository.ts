@@ -1,6 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ClanInfo } from 'src/clan-info/table/clan-info.entity';
+import { ClanMatchDetail } from 'src/clan-match-detail/table/clan-match-detail.entity';
 import { NexonUserBattleLogsInfo } from 'src/commons/dto/nexon-user-battle-log.dto/nexon-user-battle-log.dto';
 import { NEXON_USER_BATTLE_LOG } from 'src/core/constants';
+import { Game } from 'src/game/table/game.entity';
+import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
 import { NexonUserBattleLog } from './table/nexon-user-battle-log.entitiy';
 
 @Injectable()
@@ -24,7 +28,9 @@ export class NexonUserBattleLogRepository {
         weapon,
         gameId,
         nexonUserId,
+        matchId,
       }) => {
+        console.log(gameId);
         const createBattleLog = await this.nexonUserBattleLogModel.bulkCreate([
           {
             nickname,
@@ -37,6 +43,7 @@ export class NexonUserBattleLogRepository {
             weapon,
             gameId,
             nexonUserId,
+            matchId,
           },
         ]);
         return createBattleLog;
@@ -47,5 +54,26 @@ export class NexonUserBattleLogRepository {
     const flatResponse = waitArray.flat();
 
     return flatResponse;
+  }
+
+  async playerDetail(playerId: number) {
+    return await this.nexonUserBattleLogModel.findAll({
+      attributes: [],
+      include: [
+        { model: NexonUserInfo, where: { id: playerId } },
+        {
+          model: Game,
+          include: [
+            {
+              model: ClanMatchDetail,
+              include: [
+                ClanInfo,
+                { model: NexonUserBattleLog, include: [NexonUserInfo] },
+              ],
+            },
+          ],
+        },
+      ],
+    });
   }
 }

@@ -1,5 +1,4 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { ClanInfoRepository } from 'src/clan-info/clan-info.repository';
 import { LegueService } from './legue.service';
 
 @Controller('legue')
@@ -9,5 +8,10 @@ export class LegueController {
   @Get('/clan/:clanId')
   async findClanDetail(@Param('clanId') clanId: number) {
     return await this.legueService.clanDetail(clanId);
+  }
+
+  @Get('/player/:playerId')
+  async findPlayerDetail(@Param('playerId') playerId: number) {
+    return await this.legueService.PlayerDetail(playerId);
   }
 }

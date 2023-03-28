@@ -51,25 +51,4 @@ export class GameRepository {
 
     return findAllMatchKeysInGame;
   }
-
-  async clanDetail(clanId: number) {
-    return await this.gameEntity.findAll({
-      include: [
-        {
-          model: ClanMatchDetail,
-          include: [
-            {
-              model: ClanInfo,
-              where: { id: clanId },
-            },
-            {
-              model: NexonUserBattleLog,
-              include: [NexonUserInfo],
-            },
-          ],
-        },
-      ],
-      limit: 10,
-    });
-  }
 }
