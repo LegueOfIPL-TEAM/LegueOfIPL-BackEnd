@@ -21,13 +21,32 @@ export class NexonUserInfoRepository {
     return allUserNexon;
   }
 
-  async createAllNexonUser(userInfos: NexonUserInsertDb[]) {
+  async createAllNexonUser(userInfos: NexonUserInfo[]) {
     const insertUserInfoInDB = userInfos.map(
-      async ({ userNexonSn, ladderPoint }) => {
+      async ({
+        userNexonSn,
+        ladderPoint,
+        killPoint,
+        deathPoint,
+        totalWinningPoint,
+        totalKd,
+        kdRate,
+        winCount,
+        loseCount,
+        winningRate,
+      }) => {
         const createUsers = await this.nexonUserInfoModel.bulkCreate([
           {
             userNexonSn,
             ladderPoint,
+            killPoint,
+            deathPoint,
+            totalKd,
+            kdRate,
+            winCount,
+            loseCount,
+            totalWinningPoint,
+            winningRate,
           },
         ]);
 
@@ -40,11 +59,32 @@ export class NexonUserInfoRepository {
     return flatResponse;
   }
 
-  async existsUsersUpdate(userInfos: NexonUserInsertDb[]) {
+  async existsUsersUpdate(userInfos: NexonUserInfo[]) {
     const updateNexonUsers = userInfos.map(
-      async ({ ladderPoint, userNexonSn }) => {
+      async ({
+        ladderPoint,
+        userNexonSn,
+        killPoint,
+        deathPoint,
+        totalKd,
+        kdRate,
+        winCount,
+        loseCount,
+        totalWinningPoint,
+        winningRate,
+      }) => {
         const [numRows, [updatedUser]] = await this.nexonUserInfoModel.update(
-          { ladderPoint },
+          {
+            ladderPoint,
+            killPoint,
+            deathPoint,
+            totalKd,
+            kdRate,
+            winCount,
+            loseCount,
+            totalWinningPoint,
+            winningRate,
+          },
           {
             where: {
               userNexonSn,

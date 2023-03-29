@@ -247,6 +247,8 @@ export class GameService {
     matchDetails.forEach(
       ({ clanName, clanNo, result, userList, clanMark1, clanMark2 }) => {
         const ladderPoint = result.endsWith('Win') ? 15 : -11;
+        const clanWinningCount = result.endsWith('Win') ? 1 : 0;
+        const clanLoseCount = result.endsWith('Lose') ? 1 : 0;
 
         const existingClanIndex = existsClan.findIndex(
           (c) => c.clanNo === clanNo,
@@ -255,6 +257,13 @@ export class GameService {
         if (existingClanIndex !== -1) {
           const existingClan = existsClan[existingClanIndex];
           existingClan.ladderPoint += ladderPoint;
+          const winCount = (existingClan.winCount += clanWinningCount);
+          existingClan.loseCount += clanLoseCount;
+          const totalCount = (existingClan.totalMatchCount +=
+            clanWinningCount + clanLoseCount);
+          const winningRate = (winCount / totalCount) * 100;
+          const winRateRounded = winningRate.toFixed(1);
+          existingClan.winningRate += winRateRounded;
           clan.push(existingClan);
         } else {
           let newClanIndex = newClan.findIndex((c) => c.clanNo === clanNo);
@@ -266,21 +275,49 @@ export class GameService {
               clanMark1,
               clanMark2,
               ladderPoint: 1000,
+              winCount: 0,
+              loseCount: 0,
+              totalMatchCount: 0,
+              winningRate: 0,
             });
 
             newClanIndex = newClan.length - 1;
           }
           newClan[newClanIndex].ladderPoint += ladderPoint;
+          const winCount = (newClan[newClanIndex].winCount += clanWinningCount);
+          newClan[newClanIndex].loseCount += clanLoseCount;
+          const totalCount = (newClan[newClanIndex].totalMatchCount =
+            clanWinningCount + clanLoseCount);
+          const winningRate = (winCount / totalCount) * 100;
+          const winRateRounded = winningRate.toFixed(1);
+          newClan[newClanIndex].winningRate = winRateRounded;
         }
 
-        userList.forEach(({ userNexonSn }) => {
+        userList.forEach(({ userNexonSn, kill, death }) => {
           const existsUserIndex = existsUser.findIndex(
             (u) => u.userNexonSn === userNexonSn,
           );
 
           if (existsUserIndex !== -1) {
             const existingUser = existsUser[existsUserIndex];
+
+            const winCount = (existingUser.winCount += clanWinningCount);
+            const loseCount = (existingUser.loseCount += clanLoseCount);
+            const totalWinningPoint = winCount + loseCount;
+            const winningRate = (winCount / totalWinningPoint) * 100;
+            const winningRateRounded = winningRate.toFixed(1);
+            existingUser.winningRate = winningRateRounded;
+            existingUser.totalWinningPoint += winCount + loseCount;
             existingUser.ladderPoint += ladderPoint;
+
+            const killPoint = (existingUser.killPoint += kill);
+            const deatPoint = (existingUser.deathPoint += death);
+            const totalKd = (existingUser.totalKd += killPoint + deatPoint);
+            const kd = (killPoint / totalKd) * 100;
+            const kdRounded = kd.toFixed(1);
+
+            const kdRate = (existingUser.kdRate = kdRounded);
+
             user.push(existingUser);
           } else {
             let newUserIndex = newUser.findIndex(
@@ -291,10 +328,41 @@ export class GameService {
               newUser.push({
                 userNexonSn,
                 ladderPoint: 1000,
+                killPoint: 0,
+                deathPoint: 0,
+                totalKd: 0,
+                kdRate: 0,
+                winCount: 0,
+                loseCount: 0,
+                totalWinningPoint: 0,
+                winningRate: 0,
               });
               newUserIndex = newUser.length - 1;
             }
             newUser[newUserIndex].ladderPoint += ladderPoint;
+
+            const winCount = (newUser[newUserIndex].winCount +=
+              clanWinningCount);
+
+            const loseCount = (newUser[newUserIndex].loseCount +=
+              clanLoseCount);
+
+            const totalWinningPoint = (newUser[newUserIndex].totalWinningPoint =
+              winCount + loseCount);
+
+            const winningRate = (winCount / totalWinningPoint) * 100;
+
+            const winningRateRounded = winningRate.toFixed(1);
+
+            newUser[newUserIndex].winningRate = winningRateRounded;
+
+            const killPoint = (newUser[newUserIndex].killPoint += kill);
+            const deatPoint = (newUser[newUserIndex].deathPoint += death);
+            const totalKd = (newUser[newUserIndex].totalKd +=
+              killPoint + deatPoint);
+            const kd = (killPoint / totalKd) * 100;
+            const kdRounded = kd.toFixed(1);
+            const kdRate = (newUser[newUserIndex].kdRate = kdRounded);
           }
         });
       },
@@ -309,6 +377,7 @@ export class GameService {
     existsNexonUser,
     existingClan,
   }: BattleLogsAndMatchDetailWithRelation) {
+    const clanRating = [];
     const battleLogs = [];
     const matchDetailsWithRelation = [];
     matchDetails.forEach(({ matchKey, userList, clanNo, result }) => {
@@ -317,7 +386,6 @@ export class GameService {
       if (!gameId && !clan) {
         return [];
       }
-
       const matchDetail = {
         gameId,
         clanId: clan.id,
@@ -343,7 +411,6 @@ export class GameService {
             (u) => u.userNexonSn === userNexonSn,
           )!.id;
 
-          console.log(gameId);
           battleLogs.push({
             gameId,
             nexonUserId,

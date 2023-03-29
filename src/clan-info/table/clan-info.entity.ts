@@ -48,6 +48,18 @@ export class ClanInfo extends Model {
   @Column
   clanMark2: string;
 
+  @Column
+  winCount: number;
+
+  @Column
+  loseCount: number;
+
+  @Column
+  totalMatchCount: number;
+
+  @Column
+  winningRate: string;
+
   // clanMatchDetail
   @HasMany(() => ClanMatchDetail)
   clanMatchDetail: ClanMatchDetail[];

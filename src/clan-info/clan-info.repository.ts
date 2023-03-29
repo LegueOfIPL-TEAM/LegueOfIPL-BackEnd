@@ -107,7 +107,17 @@ export class ClanInfoRepository {
     matchClanDetails: ClanInfo[],
   ): Promise<ClanInfo[]> {
     const response = matchClanDetails.map(
-      async ({ clanNo, clanName, clanMark1, clanMark2, ladderPoint }) => {
+      async ({
+        clanNo,
+        clanName,
+        clanMark1,
+        clanMark2,
+        ladderPoint,
+        winCount,
+        loseCount,
+        totalMatchCount,
+        winningRate,
+      }) => {
         const createAllDataNotDuplicate = await this.clanInfoEntitiy.bulkCreate(
           [
             {
@@ -116,6 +126,10 @@ export class ClanInfoRepository {
               clanMark1,
               clanMark2,
               ladderPoint,
+              winCount,
+              loseCount,
+              totalMatchCount,
+              winningRate,
             },
           ],
         );
@@ -129,17 +143,26 @@ export class ClanInfoRepository {
     return flatResponse;
   }
 
-  async updateClanLadder(updateInfo: UpdateLadderPoint[]) {
-    const response = updateInfo.map(async ({ id, ladderPoint }) => {
-      const [num, [clanInfo]] = await this.clanInfoEntitiy.update(
-        { ladderPoint },
-        {
-          where: { id },
-          returning: true,
-        },
-      );
-      return clanInfo;
-    });
+  async updateClanLadder(updateInfo: ClanInfo[]) {
+    const response = updateInfo.map(
+      async ({
+        id,
+        ladderPoint,
+        winCount,
+        loseCount,
+        totalMatchCount,
+        winningRate,
+      }) => {
+        const [num, [clanInfo]] = await this.clanInfoEntitiy.update(
+          { ladderPoint, winCount, loseCount, totalMatchCount, winningRate },
+          {
+            where: { id },
+            returning: true,
+          },
+        );
+        return clanInfo;
+      },
+    );
 
     const waitArray = await Promise.all(response);
     return waitArray.flat();

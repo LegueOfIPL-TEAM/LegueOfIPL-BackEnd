@@ -1,3 +1,4 @@
+import { LargeNumberLike } from 'crypto';
 import {
   AllowNull,
   AutoIncrement,
@@ -32,6 +33,30 @@ export class NexonUserInfo extends Model {
 
   @Column({ defaultValue: 1000 })
   ladderPoint: number;
+
+  @Column
+  killPoint: number;
+
+  @Column
+  deathPoint: number;
+
+  @Column
+  totalKd: number;
+
+  @Column
+  kdRate: string;
+
+  @Column
+  winCount: number;
+
+  @Column
+  loseCount: number;
+
+  @Column
+  totalWinningPoint: string;
+
+  @Column
+  winningRate: string;
 
   @HasMany(() => NexonUserBattleLog)
   userDetailInfo: NexonUserBattleLog[];
