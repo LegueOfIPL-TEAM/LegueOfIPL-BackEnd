@@ -47,8 +47,6 @@ export class MatchDetailsWithRelation {
 export class GameDetails {
   matchKey: string;
   matchTime: string;
-  mapName: string;
-  plimit: string;
 }
 
 export class MatchOneOfClanDetail {

@@ -24,13 +24,11 @@ export class GameRepository {
   ) {}
   async insertMatchData(gameInfo: GameDetails[]) {
     const insertGameInfoResponse = gameInfo.map(
-      async ({ matchKey, mapName, matchTime, plimit }) => {
+      async ({ matchKey, matchTime }) => {
         return await this.gameEntity.bulkCreate([
           {
             matchKey,
-            mapName,
             matchTime,
-            plimit,
           },
         ]);
       },

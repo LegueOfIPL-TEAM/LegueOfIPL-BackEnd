@@ -53,7 +53,7 @@ export class NexonUserInfo extends Model {
   loseCount: number;
 
   @Column
-  totalWinningPoint: string;
+  totalWinningPoint: number;
 
   @Column
   winningRate: string;

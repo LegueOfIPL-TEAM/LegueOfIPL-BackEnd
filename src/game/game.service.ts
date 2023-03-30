@@ -1,5 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
+import * as dayjs from 'dayjs';
 import { ClanInfoRepository } from 'src/clan-info/clan-info.repository';
+import { ClanMatchDetailRepository } from 'src/clan-match-detail/clan-match-detail.repository';
 import {
   BattleLogsAndMatchDetailWithRelation,
   CreateClanAndUserDTO,
@@ -8,11 +10,9 @@ import {
   updateLadderPointMissingData,
 } from 'src/commons/dto/game.dto/game.dto';
 import { AllOfDataAfterRefactoring } from 'src/commons/interface/crawling.interface';
+import { NexonUserBattleLogRepository } from 'src/nexon-user-battle-log/nexon-user-battle-log.repository';
 import { NexonUserInfoRepository } from 'src/nexon-user-info/nexon-user-info.repository';
 import { GameRepository } from './game.repository';
-import * as dayjs from 'dayjs';
-import { ClanMatchDetailRepository } from 'src/clan-match-detail/clan-match-detail.repository';
-import { NexonUserBattleLogRepository } from 'src/nexon-user-battle-log/nexon-user-battle-log.repository';
 
 @Injectable()
 export class GameService {
@@ -25,23 +25,19 @@ export class GameService {
   ) {}
 
   async insertMatchData(matchDetails: AllOfDataAfterRefactoring[]) {
-    const gameInfo = matchDetails.map(
-      ({ matchKey, mapName, matchTime, plimit }) => {
-        const formatString = 'YYYY.MM.DD (HH:mm)';
-        const parsedDate = dayjs(
-          matchTime.replace('(', '').replace(')', ''),
-          formatString,
-        );
-        const formattedDate = parsedDate.format('YYYY-MM-DD HH:mm:ss');
+    const gameInfo = matchDetails.map(({ matchKey, matchTime }) => {
+      const formatString = 'YYYY.MM.DD (HH:mm)';
+      const parsedDate = dayjs(
+        matchTime.replace('(', '').replace(')', ''),
+        formatString,
+      );
+      const formattedDate = parsedDate.format('YYYY-MM-DD HH:mm:ss');
 
-        return {
-          matchKey,
-          mapName,
-          matchTime: formattedDate,
-          plimit,
-        };
-      },
-    );
+      return {
+        matchKey,
+        matchTime: formattedDate,
+      };
+    });
 
     // user Array
     const nexonUsers = matchDetails
@@ -100,12 +96,11 @@ export class GameService {
           nonDpulicateSnNos,
         );
 
-      const { clan, newClan, user, newUser } =
-        this.updateLadderPointInMissingData({
-          matchDetails: oneOfMatchDetail,
-          existsClan: existsClanInfo,
-          existsUser: existsUserInfo,
-        });
+      const { clan, newClan, user, newUser } = this.clanAndUserObjectInMatch({
+        matchDetails: oneOfMatchDetail,
+        existsClan: existsClanInfo,
+        existsUser: existsUserInfo,
+      });
 
       if (newUser.length === 0 && newClan.length === 0) {
         if (clan.length !== 0 || user.length !== 0) {
@@ -234,7 +229,7 @@ export class GameService {
     };
   }
 
-  updateLadderPointInMissingData({
+  clanAndUserObjectInMatch({
     matchDetails,
     existsClan,
     existsUser,
@@ -256,14 +251,18 @@ export class GameService {
 
         if (existingClanIndex !== -1) {
           const existingClan = existsClan[existingClanIndex];
+
           existingClan.ladderPoint += ladderPoint;
+
           const winCount = (existingClan.winCount += clanWinningCount);
-          existingClan.loseCount += clanLoseCount;
-          const totalCount = (existingClan.totalMatchCount +=
-            clanWinningCount + clanLoseCount);
+          const loseCount = (existingClan.loseCount += clanLoseCount);
+          const totalCount = (existingClan.totalWinningPoint =
+            winCount + loseCount);
+
           const winningRate = (winCount / totalCount) * 100;
           const winRateRounded = winningRate.toFixed(1);
-          existingClan.winningRate += winRateRounded;
+
+          existingClan.winningRate = winRateRounded;
           clan.push(existingClan);
         } else {
           let newClanIndex = newClan.findIndex((c) => c.clanNo === clanNo);
@@ -277,17 +276,20 @@ export class GameService {
               ladderPoint: 1000,
               winCount: 0,
               loseCount: 0,
-              totalMatchCount: 0,
+              totalWinningPoint: 0,
               winningRate: 0,
             });
 
             newClanIndex = newClan.length - 1;
           }
           newClan[newClanIndex].ladderPoint += ladderPoint;
+
           const winCount = (newClan[newClanIndex].winCount += clanWinningCount);
-          newClan[newClanIndex].loseCount += clanLoseCount;
-          const totalCount = (newClan[newClanIndex].totalMatchCount =
-            clanWinningCount + clanLoseCount);
+          const loseCount = (newClan[newClanIndex].loseCount += clanLoseCount);
+
+          const totalCount = (newClan[newClanIndex].totalWinningPoint =
+            winCount + loseCount);
+
           const winningRate = (winCount / totalCount) * 100;
           const winRateRounded = winningRate.toFixed(1);
           newClan[newClanIndex].winningRate = winRateRounded;
@@ -301,22 +303,27 @@ export class GameService {
           if (existsUserIndex !== -1) {
             const existingUser = existsUser[existsUserIndex];
 
+            existingUser.ladderPoint += ladderPoint;
+
             const winCount = (existingUser.winCount += clanWinningCount);
             const loseCount = (existingUser.loseCount += clanLoseCount);
+
             const totalWinningPoint = winCount + loseCount;
+
             const winningRate = (winCount / totalWinningPoint) * 100;
             const winningRateRounded = winningRate.toFixed(1);
+
             existingUser.winningRate = winningRateRounded;
-            existingUser.totalWinningPoint += winCount + loseCount;
-            existingUser.ladderPoint += ladderPoint;
+            existingUser.totalWinningPoint = winCount + loseCount;
 
             const killPoint = (existingUser.killPoint += kill);
             const deatPoint = (existingUser.deathPoint += death);
-            const totalKd = (existingUser.totalKd += killPoint + deatPoint);
+            const totalKd = (existingUser.totalKd = killPoint + deatPoint);
+
             const kd = (killPoint / totalKd) * 100;
             const kdRounded = kd.toFixed(1);
 
-            const kdRate = (existingUser.kdRate = kdRounded);
+            existingUser.kdRate = kdRounded;
 
             user.push(existingUser);
           } else {
@@ -339,6 +346,7 @@ export class GameService {
               });
               newUserIndex = newUser.length - 1;
             }
+
             newUser[newUserIndex].ladderPoint += ladderPoint;
 
             const winCount = (newUser[newUserIndex].winCount +=
@@ -358,7 +366,7 @@ export class GameService {
 
             const killPoint = (newUser[newUserIndex].killPoint += kill);
             const deatPoint = (newUser[newUserIndex].deathPoint += death);
-            const totalKd = (newUser[newUserIndex].totalKd +=
+            const totalKd = (newUser[newUserIndex].totalKd =
               killPoint + deatPoint);
             const kd = (killPoint / totalKd) * 100;
             const kdRounded = kd.toFixed(1);

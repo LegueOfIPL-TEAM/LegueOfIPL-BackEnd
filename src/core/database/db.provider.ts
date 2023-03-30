@@ -1,13 +1,13 @@
-import { Sequelize } from 'sequelize-typescript';
-import { Board } from '../../board/table/board.model';
-import { SEQUELIZE, DEVELOPMENT, TEST, PRODUCTION } from '../constants';
-import { databaseConfig } from './database.config';
-import { Game } from 'src/game/table/game.entity';
-import { ClanInfo } from 'src/clan-info/table/clan-info.entity';
-import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
-import { NexonUserBattleLog } from 'src/nexon-user-battle-log/table/nexon-user-battle-log.entitiy';
-import { ClanMatchDetail } from 'src/clan-match-detail/table/clan-match-detail.entity';
 import { Logger } from '@nestjs/common';
+import { Sequelize } from 'sequelize-typescript';
+import { ClanInfo } from 'src/clan-info/table/clan-info.entity';
+import { ClanMatchDetail } from 'src/clan-match-detail/table/clan-match-detail.entity';
+import { Game } from 'src/game/table/game.entity';
+import { NexonUserBattleLog } from 'src/nexon-user-battle-log/table/nexon-user-battle-log.entitiy';
+import { NexonUserInfo } from 'src/nexon-user-info/table/nexon-user-info.entitiy';
+import { Board } from '../../board/table/board.model';
+import { DEVELOPMENT, PRODUCTION, SEQUELIZE, TEST } from '../constants';
+import { databaseConfig } from './database.config';
 
 export const databaseProviders = [
   {

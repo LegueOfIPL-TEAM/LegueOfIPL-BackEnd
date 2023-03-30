@@ -115,7 +115,7 @@ export class ClanInfoRepository {
         ladderPoint,
         winCount,
         loseCount,
-        totalMatchCount,
+        totalWinningPoint,
         winningRate,
       }) => {
         const createAllDataNotDuplicate = await this.clanInfoEntitiy.bulkCreate(
@@ -128,7 +128,7 @@ export class ClanInfoRepository {
               ladderPoint,
               winCount,
               loseCount,
-              totalMatchCount,
+              totalWinningPoint,
               winningRate,
             },
           ],
@@ -150,11 +150,11 @@ export class ClanInfoRepository {
         ladderPoint,
         winCount,
         loseCount,
-        totalMatchCount,
+        totalWinningPoint,
         winningRate,
       }) => {
         const [num, [clanInfo]] = await this.clanInfoEntitiy.update(
-          { ladderPoint, winCount, loseCount, totalMatchCount, winningRate },
+          { ladderPoint, winCount, loseCount, totalWinningPoint, winningRate },
           {
             where: { id },
             returning: true,
