@@ -1,9 +1,8 @@
+import { NexonUserBattleLog } from 'src/nexon-user-battle-log/table/nexon-user-battle-log.entitiy';
+
 export interface AllOfDataAfterRefactoring {
   matchKey: string;
   matchTime: string;
-  mapName: string;
-  matchName: string;
-  plimit: string;
   redResult: string;
   redClanNo: string;
   redClanName: string;
@@ -21,7 +20,7 @@ export interface AllOfDataAfterRefactoring {
 export interface getManyMatchListAndUrls {
   matchListInfos: MatchListInfo[];
   battleLogUrls: string[];
-  matchResusltUrls: string[];
+  matchResultUrls: string[];
 }
 
 export interface getMatchDetails {
@@ -61,7 +60,7 @@ export interface KillLog {
   targetWeapon: string;
 }
 
-export type GameLogs = KillLog[][];
+export type GameLogs = KillLog[];
 
 export interface AllUserInMatch {
   winnerTeam: Player[];
@@ -76,4 +75,9 @@ export interface Player {
   damage: string;
   grade: string;
   weapon: string;
+}
+
+export interface TeamResults {
+  winnerTeam: NexonUserBattleLog[];
+  loserTeam: NexonUserBattleLog[];
 }
