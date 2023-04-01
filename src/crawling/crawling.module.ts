@@ -1,12 +1,11 @@
-import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
-import { GameModule } from 'src/game/game.module';
 import { CrawlingController } from './crawling.controller';
-import { CrawlingRepository } from './crawling.repository';
 import { CrawlingService } from './crawling.service';
+import { HttpModule } from '@nestjs/axios';
+import { CrawlingRepository } from './crawling.repository';
 
 @Module({
-  imports: [HttpModule, GameModule],
+  imports: [HttpModule],
   controllers: [CrawlingController],
   providers: [CrawlingService, CrawlingRepository],
 })
