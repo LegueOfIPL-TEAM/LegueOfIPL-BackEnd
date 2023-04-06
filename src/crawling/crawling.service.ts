@@ -1,24 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { enviroment } from 'src/commons/enviroment';
-import {
-  getManyMatchListAndUrls,
-  GameLogs,
-  AllUserInMatch,
-  AllOfDataAfterRefactoring,
-} from 'src/commons/interface/crawling.interface';
 import {
   AllOfDataBeforRefactoring,
   BattleLogs,
 } from 'src/commons/dto/crawling.dto/cawling.dto';
+import { enviroment } from 'src/commons/enviroment';
+import {
+  AllOfDataAfterRefactoring,
+  AllUserInMatch,
+  GameLogs,
+  getManyMatchListAndUrls,
+} from 'src/commons/interface/crawling.interface';
+import { GameRepository } from 'src/game/game.repository';
 
 @Injectable()
 export class CrawlingService {
+  constructor(private readonly gameRepository: GameRepository) {}
   async allOfDatasInSa(): Promise<AllOfDataAfterRefactoring[]> {
     const getMatchList = await this.getManyMatchList();
 
-    const { battleLogUrls, matchListInfos, matchResusltUrls } = getMatchList;
+    const { battleLogUrls, matchListInfos, matchResultUrls } = getMatchList;
 
-    const matchDetails = await this.getMatchDetails(matchResusltUrls);
+    const matchDetails = await this.getMatchDetails(matchResultUrls);
 
     const battleLogs = await this.getBattleLog(battleLogUrls);
 
@@ -40,7 +42,7 @@ export class CrawlingService {
 
     const matchListInfos = [];
     const battleLogUrls = [];
-    const matchResusltUrls = [];
+    const matchResultUrls = [];
 
     for (const clienId of clienIds) {
       const body = JSON.stringify({
@@ -62,7 +64,7 @@ export class CrawlingService {
 
       const clanInIPLgue = enviroment.clanNames;
 
-      result.forEach((item) => {
+      result.forEach(async (item) => {
         const {
           map_name: mapName,
           match_name: matchName,
@@ -85,6 +87,11 @@ export class CrawlingService {
           clanInIPLgue.includes(blueClanName) &&
           clanInIPLgue.includes(redClanName)
         ) {
+          const existingMatch = await this.gameRepository.findMatchByMatchKey(
+            matchKey,
+          );
+
+          if (existingMatch) return [];
           const returnValue = {
             mapName,
             matchName,
@@ -101,12 +108,12 @@ export class CrawlingService {
           const matchResultUrl = `https://barracks.sa.nexon.com/api/Match/GetMatchClanDetail/${matchKey}/C/${clienId}`;
 
           battleLogUrls.push(battleLogURL);
-          matchResusltUrls.push(matchResultUrl);
+          matchResultUrls.push(matchResultUrl);
           matchListInfos.push(returnValue);
         }
       });
     }
-    return { battleLogUrls, matchListInfos, matchResusltUrls };
+    return { battleLogUrls, matchListInfos, matchResultUrls };
   }
 
   async getMatchDetails(urls: string[]) {
@@ -175,7 +182,7 @@ export class CrawlingService {
     return matchDetails;
   }
 
-  async getBattleLog(urls: string[]): Promise<GameLogs> {
+  async getBattleLog(urls: string[]): Promise<GameLogs[]> {
     const matchUserNick = [];
 
     const results = await Promise.all(

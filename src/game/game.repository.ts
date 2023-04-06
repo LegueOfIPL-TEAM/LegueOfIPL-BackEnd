@@ -1,19 +1,7 @@
-import { HttpException, Inject, Injectable } from '@nestjs/common';
-import {
-  CLAN_INFO,
-  ClAN_MATCH_DETAIL,
-  GAME_ENTITY,
-  NEXON_USER_BATTLE_LOG,
-  NEXON_USER_INFO,
-} from 'src/core/constants';
-import { Game } from './table/game.entity';
-import { ClanInfo } from '../clan-info/table/clan-info.entity';
-import { NexonUserInfo } from '../nexon-user-info/table/nexon-user-info.entitiy';
-import { NexonUserBattleLog } from '../nexon-user-battle-log/table/nexon-user-battle-log.entitiy';
-import { ClanMatchDetail } from '../clan-match-detail/table/clan-match-detail.entity';
-import { AllOfDataAfterRefactoring } from 'src/commons/interface/crawling.interface';
-import * as dayjs from 'dayjs';
+import { Inject, Injectable } from '@nestjs/common';
 import { GameDetails } from 'src/commons/dto/game.dto/game.dto';
+import { GAME_ENTITY } from 'src/core/constants';
+import { Game } from './table/game.entity';
 
 @Injectable()
 export class GameRepository {
@@ -47,5 +35,13 @@ export class GameRepository {
     });
 
     return findAllMatchKeysInGame;
+  }
+
+  async findMatchByMatchKey(matchKey: string) {
+    return await this.gameEntity.findOne({
+      where: {
+        matchKey,
+      },
+    });
   }
 }
