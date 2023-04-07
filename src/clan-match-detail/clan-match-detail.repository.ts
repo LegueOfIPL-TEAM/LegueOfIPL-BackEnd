@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClanInfo } from 'src/clan-info/table/clan-info.entity';
-import { MatchDetailsInResult } from 'src/commons/dto/clan-match-detail.dto/clan-match-detil.dto';
 import { ClAN_MATCH_DETAIL } from 'src/core/constants';
 import { Game } from 'src/game/table/game.entity';
 import { NexonUserBattleLog } from 'src/nexon-user-battle-log/table/nexon-user-battle-log.entitiy';
@@ -42,15 +41,30 @@ export class ClanMatchDetailRepository {
     return await this.clanMatchDetailModel.findAll({
       attributes: [],
       include: [
-        { model: ClanInfo, where: { id: clanId } },
+        {
+          model: ClanInfo,
+          where: { id: clanId },
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
         {
           model: Game,
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+
           include: [
             {
               model: ClanMatchDetail,
+              attributes: { exclude: ['createdAt', 'updatedAt'] },
+
               include: [
-                ClanInfo,
-                { model: NexonUserBattleLog, include: [NexonUserInfo] },
+                {
+                  model: ClanInfo,
+                  attributes: { exclude: ['createdAt', 'updatedAt'] },
+                },
+                {
+                  model: NexonUserBattleLog,
+                  attributes: { exclude: ['createdAt', 'updatedAt'] },
+                  include: [NexonUserInfo],
+                },
               ],
             },
           ],

@@ -30,7 +30,6 @@ export class NexonUserBattleLogRepository {
         nexonUserId,
         matchId,
       }) => {
-        console.log(gameId);
         const createBattleLog = await this.nexonUserBattleLogModel.bulkCreate([
           {
             nickname,
@@ -60,15 +59,28 @@ export class NexonUserBattleLogRepository {
     return await this.nexonUserBattleLogModel.findAll({
       attributes: [],
       include: [
-        { model: NexonUserInfo, where: { id: playerId } },
+        {
+          model: NexonUserInfo,
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+          where: { id: playerId },
+        },
         {
           model: Game,
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
           include: [
             {
               model: ClanMatchDetail,
+              attributes: { exclude: ['createdAt', 'updatedAt'] },
               include: [
-                ClanInfo,
-                { model: NexonUserBattleLog, include: [NexonUserInfo] },
+                {
+                  model: ClanInfo,
+                  attributes: { exclude: ['createdAt', 'updatedAt'] },
+                },
+                {
+                  model: NexonUserBattleLog,
+                  attributes: { exclude: ['createdAt', 'updatedAt'] },
+                  include: [NexonUserInfo],
+                },
               ],
             },
           ],

@@ -1,9 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { ClanInfoRepository } from 'src/clan-info/clan-info.repository';
 import { ClanMatchDetailRepository } from 'src/clan-match-detail/clan-match-detail.repository';
-import { GameRepository } from 'src/game/game.repository';
 import { NexonUserBattleLogRepository } from 'src/nexon-user-battle-log/nexon-user-battle-log.repository';
-import { NexonUserInfoRepository } from 'src/nexon-user-info/nexon-user-info.repository';
 
 @Injectable()
 export class LegueService {
