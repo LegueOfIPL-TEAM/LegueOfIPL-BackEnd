@@ -17,6 +17,6 @@ import { gameProviders } from './table/game.provider';
   ],
   controllers: [GameController],
   providers: [GameService, ...gameProviders, GameRepository],
-  exports: [GameRepository],
+  exports: [GameRepository, GameService],
 })
 export class GameModule {}
