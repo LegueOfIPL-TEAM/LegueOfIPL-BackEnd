@@ -3,25 +3,30 @@ import {
   AllOfDataBeforRefactoring,
   BattleLogs,
 } from 'src/commons/dto/crawling.dto/cawling.dto';
+
 import { enviroment } from 'src/commons/enviroment';
 import {
-  AllOfDataAfterRefactoring,
-  AllUserInMatch,
-  GameLogs,
   getManyMatchListAndUrls,
+  GameLogs,
+  AllUserInMatch,
+  AllOfDataAfterRefactoring,
 } from 'src/commons/interface/crawling.interface';
-import { GameRepository } from 'src/game/game.repository';
+import {
+  AllOfDataBeforRefactoring,
+  BattleLogs,
+} from 'src/commons/dto/crawling.dto/cawling.dto';
 
 @Injectable()
 export class CrawlingService {
-  constructor(private readonly gameRepository: GameRepository) {}
 
+  constructor(private readonly gameRepository: GameRepository) {}
+  
   async allOfDatasInSa(): Promise<AllOfDataAfterRefactoring[]> {
     const getMatchList = await this.getManyMatchList();
 
-    const { battleLogUrls, matchListInfos, matchResultUrls } = getMatchList;
+    const { battleLogUrls, matchListInfos, matchResusltUrls } = getMatchList;
 
-    const matchDetails = await this.getMatchDetails(matchResultUrls);
+    const matchDetails = await this.getMatchDetails(matchResusltUrls);
 
     const battleLogs = await this.getBattleLog(battleLogUrls);
 
@@ -43,7 +48,7 @@ export class CrawlingService {
 
     const matchListInfos = [];
     const battleLogUrls = [];
-    const matchResultUrls = [];
+    const matchResusltUrls = [];
 
     for (const clienId of clienIds) {
       const body = JSON.stringify({
@@ -105,9 +110,25 @@ export class CrawlingService {
               plimit,
             };
 
-            const battleLogURL = `https://barracks.sa.nexon.com/api/BattleLog/GetBattleLogClan/${matchKey}/${clanNo}`;
-            const matchResultUrl = `https://barracks.sa.nexon.com/api/Match/GetMatchClanDetail/${matchKey}/C/${clienId}`;
-
+        if (
+          mapName === '제3보급창고' &&
+          plimit === 5 &&
+          resulWdl === '승' &&
+          clanInIPLgue.includes(blueClanName) &&
+          clanInIPLgue.includes(redClanName)
+        ) {
+          const returnValue = {
+            mapName,
+            matchName,
+            redClanName,
+            redClanMark1,
+            redClanMark2,
+            blueClanName,
+            blueClanMark1,
+            blueClanMark2,
+            plimit,
+          };
+          
             battleLogUrls.push(battleLogURL);
             matchResultUrls.push(matchResultUrl);
             matchListInfos.push(matchList);
@@ -195,7 +216,7 @@ export class CrawlingService {
           url: url,
           headers: { 'Content-Type': 'application/json' },
         };
-
+        
         const requestSpecificUrl = await fetch(url, request);
 
         if (requestSpecificUrl.status === 500) return [];
