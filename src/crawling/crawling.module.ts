@@ -8,5 +8,6 @@ import { CrawlingRepository } from './crawling.repository';
   imports: [HttpModule],
   controllers: [CrawlingController],
   providers: [CrawlingService, CrawlingRepository],
+  exports: [CrawlingService],
 })
 export class CrawlingModule {}
