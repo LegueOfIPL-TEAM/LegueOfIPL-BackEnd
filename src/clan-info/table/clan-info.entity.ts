@@ -37,23 +37,16 @@ export class ClanInfo extends Model {
   @Column({ defaultValue: 1000 })
   ladderPoint: number;
 
+  @Column({
+    allowNull: true,
+  })
+  rank: number;
+
   @Column
   clanMark1: string;
 
   @Column
   clanMark2: string;
-
-  @Column
-  winCount: number;
-
-  @Column
-  loseCount: number;
-
-  @Column
-  totalWinningPoint: number;
-
-  @Column
-  winningRate: string;
 
   // clanMatchDetail
   @HasMany(() => ClanMatchDetail)
