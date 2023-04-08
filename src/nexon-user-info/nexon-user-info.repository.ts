@@ -21,32 +21,13 @@ export class NexonUserInfoRepository {
     return allUserNexon;
   }
 
-  async createAllNexonUser(userInfos: NexonUserInfo[]) {
+  async createAllNexonUser(userInfos: NexonUserInsertDb[]) {
     const insertUserInfoInDB = userInfos.map(
-      async ({
-        userNexonSn,
-        ladderPoint,
-        killPoint,
-        deathPoint,
-        totalWinningPoint,
-        totalKd,
-        kdRate,
-        winCount,
-        loseCount,
-        winningRate,
-      }) => {
+      async ({ userNexonSn, ladderPoint }) => {
         const createUsers = await this.nexonUserInfoModel.bulkCreate([
           {
             userNexonSn,
             ladderPoint,
-            killPoint,
-            deathPoint,
-            totalKd,
-            kdRate,
-            winCount,
-            loseCount,
-            totalWinningPoint,
-            winningRate,
           },
         ]);
 
@@ -59,32 +40,11 @@ export class NexonUserInfoRepository {
     return flatResponse;
   }
 
-  async existsUsersUpdate(userInfos: NexonUserInfo[]) {
+  async existsUsersUpdate(userInfos: NexonUserInsertDb[]) {
     const updateNexonUsers = userInfos.map(
-      async ({
-        ladderPoint,
-        userNexonSn,
-        killPoint,
-        deathPoint,
-        totalKd,
-        kdRate,
-        winCount,
-        loseCount,
-        totalWinningPoint,
-        winningRate,
-      }) => {
+      async ({ ladderPoint, userNexonSn }) => {
         const [numRows, [updatedUser]] = await this.nexonUserInfoModel.update(
-          {
-            ladderPoint,
-            killPoint,
-            deathPoint,
-            totalKd,
-            kdRate,
-            winCount,
-            loseCount,
-            totalWinningPoint,
-            winningRate,
-          },
+          { ladderPoint },
           {
             where: {
               userNexonSn,
@@ -100,12 +60,5 @@ export class NexonUserInfoRepository {
     const waitArray = await Promise.all(updateNexonUsers);
 
     return waitArray.flat();
-  }
-
-  async nexonUserRank() {
-    return await this.nexonUserInfoModel.findAll({
-      order: [['ladderPoint', 'DESC']],
-      limit: 20,
-    });
   }
 }

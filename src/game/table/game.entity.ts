@@ -38,6 +38,12 @@ export class Game extends Model {
   })
   matchTime: Date;
 
+  @Column
+  mapName: string;
+
+  @Column
+  plimit: string;
+
   @HasMany(() => NexonUserBattleLog)
   nexonUserBattleLog: NexonUserBattleLog[];
 
