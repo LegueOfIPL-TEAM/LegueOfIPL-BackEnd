@@ -6,27 +6,23 @@ import {
 
 import { enviroment } from 'src/commons/enviroment';
 import {
-  getManyMatchListAndUrls,
-  GameLogs,
-  AllUserInMatch,
   AllOfDataAfterRefactoring,
+  AllUserInMatch,
+  GameLogs,
+  getManyMatchListAndUrls,
 } from 'src/commons/interface/crawling.interface';
-import {
-  AllOfDataBeforRefactoring,
-  BattleLogs,
-} from 'src/commons/dto/crawling.dto/cawling.dto';
+import { GameRepository } from 'src/game/game.repository';
 
 @Injectable()
 export class CrawlingService {
-
   constructor(private readonly gameRepository: GameRepository) {}
-  
-  async allOfDatasInSa(): Promise<AllOfDataAfterRefactoring[]> {
+  // : Promise<AllOfDataAfterRefactoring[]>
+  async allOfDatasInSa() {
     const getMatchList = await this.getManyMatchList();
 
-    const { battleLogUrls, matchListInfos, matchResusltUrls } = getMatchList;
+    const { battleLogUrls, matchListInfos, matchResultUrls } = getMatchList;
 
-    const matchDetails = await this.getMatchDetails(matchResusltUrls);
+    const matchDetails = await this.getMatchDetails(matchResultUrls);
 
     const battleLogs = await this.getBattleLog(battleLogUrls);
 
@@ -48,7 +44,7 @@ export class CrawlingService {
 
     const matchListInfos = [];
     const battleLogUrls = [];
-    const matchResusltUrls = [];
+    const matchResultUrls = [];
 
     for (const clienId of clienIds) {
       const body = JSON.stringify({
@@ -110,25 +106,9 @@ export class CrawlingService {
               plimit,
             };
 
-        if (
-          mapName === '제3보급창고' &&
-          plimit === 5 &&
-          resulWdl === '승' &&
-          clanInIPLgue.includes(blueClanName) &&
-          clanInIPLgue.includes(redClanName)
-        ) {
-          const returnValue = {
-            mapName,
-            matchName,
-            redClanName,
-            redClanMark1,
-            redClanMark2,
-            blueClanName,
-            blueClanMark1,
-            blueClanMark2,
-            plimit,
-          };
-          
+            const battleLogURL = `https://barracks.sa.nexon.com/api/BattleLog/GetBattleLogClan/${matchKey}/${clanNo}`;
+            const matchResultUrl = `https://barracks.sa.nexon.com/api/Match/GetMatchClanDetail/${matchKey}/C/${clienId}`;
+
             battleLogUrls.push(battleLogURL);
             matchResultUrls.push(matchResultUrl);
             matchListInfos.push(matchList);
@@ -136,7 +116,6 @@ export class CrawlingService {
         }
       }
     }
-
     return { battleLogUrls, matchListInfos, matchResultUrls };
   }
 
@@ -206,7 +185,7 @@ export class CrawlingService {
     return matchDetails;
   }
 
-  async getBattleLog(urls: string[]): Promise<GameLogs[]> {
+  async getBattleLog(urls: string[]): Promise<GameLogs> {
     const matchUserNick = [];
 
     const results = await Promise.all(
@@ -216,7 +195,7 @@ export class CrawlingService {
           url: url,
           headers: { 'Content-Type': 'application/json' },
         };
-        
+
         const requestSpecificUrl = await fetch(url, request);
 
         if (requestSpecificUrl.status === 500) return [];
