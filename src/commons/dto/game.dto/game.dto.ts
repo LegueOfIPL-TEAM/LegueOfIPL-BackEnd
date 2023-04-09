@@ -47,6 +47,8 @@ export class MatchDetailsWithRelation {
 export class GameDetails {
   matchKey: string;
   matchTime: string;
+  mapName: string;
+  plimit: string;
 }
 
 export class MatchOneOfClanDetail {
@@ -57,4 +59,5 @@ export class MatchOneOfClanDetail {
   clanMark1: string;
   clanMark2: string;
   userList: NexonUserDetails[];
+  targetClanNo: string;
 }

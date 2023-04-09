@@ -9,6 +9,5 @@ import { CrawlingService } from './crawling.service';
   imports: [HttpModule, GameModule],
   controllers: [CrawlingController],
   providers: [CrawlingService, CrawlingRepository],
-  exports: [CrawlingService],
 })
 export class CrawlingModule {}

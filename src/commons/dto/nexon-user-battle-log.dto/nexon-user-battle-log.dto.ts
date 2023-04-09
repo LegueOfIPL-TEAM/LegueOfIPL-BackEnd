@@ -18,5 +18,4 @@ export class NexonUserBattleLogsInfo {
   weapon: string;
   gameId: number;
   nexonUserId: number;
-  matchId: number;
 }

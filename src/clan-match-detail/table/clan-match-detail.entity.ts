@@ -10,7 +10,6 @@ import {
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-import { NexonUserBattleLog } from 'src/nexon-user-battle-log/table/nexon-user-battle-log.entitiy';
 import { ClanInfo } from '../../clan-info/table/clan-info.entity';
 import { Game } from '../../game/table/game.entity';
 import { NexonUserInfo } from '../../nexon-user-info/table/nexon-user-info.entitiy';
@@ -58,7 +57,4 @@ export class ClanMatchDetail extends Model {
 
   @ForeignKey(() => Game)
   gameId: number;
-
-  @HasMany(() => NexonUserBattleLog)
-  userDetail: NexonUserBattleLog[];
 }
