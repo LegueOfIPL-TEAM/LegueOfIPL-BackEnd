@@ -1,27 +1,24 @@
 import { Injectable } from '@nestjs/common';
+import { enviroment } from 'src/commons/enviroment';
+import {
+  getManyMatchListAndUrls,
+  GameLogs,
+  AllUserInMatch,
+  AllOfDataAfterRefactoring,
+} from 'src/commons/interface/crawling.interface';
 import {
   AllOfDataBeforRefactoring,
   BattleLogs,
 } from 'src/commons/dto/crawling.dto/cawling.dto';
-import { enviroment } from 'src/commons/enviroment';
-import {
-  AllOfDataAfterRefactoring,
-  AllUserInMatch,
-  GameLogs,
-  getManyMatchListAndUrls,
-} from 'src/commons/interface/crawling.interface';
-import { GameRepository } from 'src/game/game.repository';
 
 @Injectable()
 export class CrawlingService {
-  constructor(private readonly gameRepository: GameRepository) {}
-
   async allOfDatasInSa(): Promise<AllOfDataAfterRefactoring[]> {
     const getMatchList = await this.getManyMatchList();
 
-    const { battleLogUrls, matchListInfos, matchResultUrls } = getMatchList;
+    const { battleLogUrls, matchListInfos, matchResusltUrls } = getMatchList;
 
-    const matchDetails = await this.getMatchDetails(matchResultUrls);
+    const matchDetails = await this.getMatchDetails(matchResusltUrls);
 
     const battleLogs = await this.getBattleLog(battleLogUrls);
 
@@ -43,7 +40,7 @@ export class CrawlingService {
 
     const matchListInfos = [];
     const battleLogUrls = [];
-    const matchResultUrls = [];
+    const matchResusltUrls = [];
 
     for (const clienId of clienIds) {
       const body = JSON.stringify({
@@ -65,7 +62,7 @@ export class CrawlingService {
 
       const clanInIPLgue = enviroment.clanNames;
 
-      for (const matchInfo of result) {
+      result.forEach((item) => {
         const {
           map_name: mapName,
           match_name: matchName,
@@ -79,7 +76,7 @@ export class CrawlingService {
           result_wdl: resulWdl,
           match_key: matchKey,
           clan_no: clanNo,
-        } = matchInfo;
+        } = item;
 
         if (
           mapName === '제3보급창고' &&
@@ -88,35 +85,28 @@ export class CrawlingService {
           clanInIPLgue.includes(blueClanName) &&
           clanInIPLgue.includes(redClanName)
         ) {
-          const existingGame = await this.gameRepository.findMatchByMatchKey(
-            matchKey,
-          );
+          const returnValue = {
+            mapName,
+            matchName,
+            redClanName,
+            redClanMark1,
+            redClanMark2,
+            blueClanName,
+            blueClanMark1,
+            blueClanMark2,
+            plimit,
+          };
 
-          if (!existingGame) {
-            const matchList = {
-              mapName,
-              matchName,
-              redClanName,
-              redClanMark1,
-              redClanMark2,
-              blueClanName,
-              blueClanMark1,
-              blueClanMark2,
-              plimit,
-            };
+          const battleLogURL = `https://barracks.sa.nexon.com/api/BattleLog/GetBattleLogClan/${matchKey}/${clanNo}`;
+          const matchResultUrl = `https://barracks.sa.nexon.com/api/Match/GetMatchClanDetail/${matchKey}/C/${clienId}`;
 
-            const battleLogURL = `https://barracks.sa.nexon.com/api/BattleLog/GetBattleLogClan/${matchKey}/${clanNo}`;
-            const matchResultUrl = `https://barracks.sa.nexon.com/api/Match/GetMatchClanDetail/${matchKey}/C/${clienId}`;
-
-            battleLogUrls.push(battleLogURL);
-            matchResultUrls.push(matchResultUrl);
-            matchListInfos.push(matchList);
-          }
+          battleLogUrls.push(battleLogURL);
+          matchResusltUrls.push(matchResultUrl);
+          matchListInfos.push(returnValue);
         }
-      }
+      });
     }
-
-    return { battleLogUrls, matchListInfos, matchResultUrls };
+    return { battleLogUrls, matchListInfos, matchResusltUrls };
   }
 
   async getMatchDetails(urls: string[]) {
@@ -280,81 +270,65 @@ export class CrawlingService {
       });
     });
 
-    const newMatch = [];
-
-    matchListInfos.forEach((match, index) => {
+    const refactoringData = matchListInfos.map((item, index) => {
       const {
         mapName,
+        matchName,
         redClanName,
         redClanMark1,
         redClanMark2,
         blueClanName,
         blueClanMark1,
         blueClanMark2,
-      } = match;
-
-      let existingMatchInfo = newMatch.findIndex(
-        (c) => c.matchKey === matchDetails[index]['matchKey'],
-      );
-
-      if (existingMatchInfo === -1) {
-        newMatch.push({
-          matchKey: '',
-          matchTime: '',
-          mapName: '',
-          redResult: '',
-          redClanNo: 0,
-          redClanName: '',
-          redClanMark1: '',
-          redClanMark2: '',
-          redUserList: [],
-          blueResult: '',
-          blueClanNo: 0,
-          blueClanName: '',
-          blueClanMark1: '',
-          blueClanMark2: '',
-          blueUserList: [],
-        });
-
-        existingMatchInfo = newMatch.length - 1;
-      }
-      const newMatchIndex = newMatch[existingMatchInfo];
+      } = item;
 
       if (matchDetails[index]['redResult'] === 'win') {
-        newMatchIndex.matchKey = matchDetails[index]['matchKey'];
-        newMatchIndex.matchTime = matchDetails[index]['matchTime'];
-        newMatchIndex.mapName = mapName;
-        newMatchIndex.redResult = matchDetails[index]['redResult'];
-        newMatchIndex.redClanNo = matchDetails[index]['redClanNo'];
-        newMatchIndex.redClanName = redClanName;
-        newMatchIndex.redClanMark1 = redClanMark1;
-        newMatchIndex.redClanMark2 = redClanMark2;
-        newMatchIndex.redUserList = battleLogs[index]['winnerTeam'];
-        newMatchIndex.blueResult = matchDetails[index]['blueResult'];
-        newMatchIndex.blueClanNo = matchDetails[index]['blueClanNo'];
-        newMatchIndex.blueClanName = blueClanName;
-        newMatchIndex.blueClanMark1 = blueClanMark1;
-        newMatchIndex.blueClanMark2 = blueClanMark2;
-        newMatchIndex.blueUserList = battleLogs[index]['loseTeam'];
+        const response = {
+          matchKey: matchDetails[index]['matchKey'],
+          matchTime: matchDetails[index]['matchTime'],
+          mapName,
+          matchName,
+          plimit: '5vs5',
+          redResult: matchDetails[index]['redResult'],
+          redClanNo: matchDetails[index]['redClanNo'],
+          redClanName,
+          redClanMark1,
+          redClanMark2,
+          redUserList: battleLogs[index]['winnerTeam'],
+          blueResult: matchDetails[index]['blueResult'],
+          blueClanNo: matchDetails[index]['blueClanNo'],
+          blueClanName,
+          blueClanMark1,
+          blueClanMark2,
+          blueUserList: battleLogs[index]['loseTeam'],
+        };
+
+        return response;
       }
-      newMatchIndex.matchKey = matchDetails[index]['matchKey'];
-      newMatchIndex.matchTime = matchDetails[index]['matchTime'];
-      newMatchIndex.mapName = mapName;
-      newMatchIndex.blueResult = matchDetails[index]['blueResult'];
-      newMatchIndex.blueClanNo = matchDetails[index]['blueClanNo'];
-      newMatchIndex.blueClanName = blueClanName;
-      newMatchIndex.blueClanMark1 = blueClanMark1;
-      newMatchIndex.blueClanMark2 = blueClanMark2;
-      newMatchIndex.blueUserList = battleLogs[index]['winnerTeam'];
-      newMatchIndex.redResult = matchDetails[index]['redResult'];
-      newMatchIndex.redClanNo = matchDetails[index]['redClanNo'];
-      newMatchIndex.redClanName = redClanName;
-      newMatchIndex.redClanMark1 = redClanMark1;
-      newMatchIndex.redClanMark2 = redClanMark2;
-      newMatchIndex.redUserList = battleLogs[index]['loseTeam'];
+
+      const response = {
+        matchKey: matchDetails[index]['matchKey'],
+        matchTime: matchDetails[index]['matchTime'],
+        mapName,
+        matchName,
+        plimit: '5vs5',
+        blueResult: matchDetails[index]['blueResult'],
+        blueClanNo: matchDetails[index]['blueClanNo'],
+        blueClanName,
+        blueClanMark1,
+        blueClanMark2,
+        blueUserList: battleLogs[index]['winnerTeam'],
+        redResult: matchDetails[index]['redResult'],
+        redClanNo: matchDetails[index]['redClanNo'],
+        redClanName,
+        redClanMark1,
+        redClanMark2,
+        redUserList: battleLogs[index]['loseTeam'],
+      };
+      return response;
     });
 
-    return newMatch;
+    return refactoringData;
   }
 
   refactoringBattleLogData(battleLogs: BattleLogs[][]): AllUserInMatch[] {
