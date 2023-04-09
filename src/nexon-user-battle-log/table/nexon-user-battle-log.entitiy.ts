@@ -10,6 +10,7 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { ClanInfo } from 'src/clan-info/table/clan-info.entity';
+import { ClanMatchDetail } from 'src/clan-match-detail/table/clan-match-detail.entity';
 import { Game } from '../../game/table/game.entity';
 import { NexonUserInfo } from '../../nexon-user-info/table/nexon-user-info.entitiy';
 
@@ -61,4 +62,10 @@ export class NexonUserBattleLog extends Model {
 
   @ForeignKey(() => NexonUserInfo)
   nexonUserId: number;
+
+  @BelongsTo(() => ClanMatchDetail)
+  matchDetail: ClanMatchDetail;
+
+  @ForeignKey(() => ClanMatchDetail)
+  matchId: number;
 }
