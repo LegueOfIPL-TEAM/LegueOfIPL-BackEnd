@@ -21,7 +21,7 @@ export interface AllOfDataAfterRefactoring {
 export interface getManyMatchListAndUrls {
   matchListInfos: MatchListInfo[];
   battleLogUrls: string[];
-  matchResusltUrls: string[];
+  matchResultUrls: string[];
 }
 
 export interface getMatchDetails {
